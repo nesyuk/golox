@@ -5,11 +5,34 @@ import (
 	"testing"
 )
 
-func TestPrint(t *testing.T) {
+var (
+	minus = "-"
+	star  = "*"
+)
+
+func TestPrintPrimary(t *testing.T) {
 	printer := &AstPrinter{}
-	// - 123 * (45.67)
-	star := "*"
-	minus := "-"
+	expr := &Literal{Value: 123}
+	got := expr.Accept(printer)
+	if got != "123" {
+		t.Fatalf("expect: %v got: %v", "", got)
+	}
+}
+
+func TestPrintUnary(t *testing.T) {
+	expr := &Unary{
+		Operation: scanner.Token{TokenType: scanner.MINUS, Lexeme: &minus},
+		Right:     &Literal{Value: 123},
+	}
+	printer := &AstPrinter{}
+	got := expr.Accept(printer)
+	if got != "(- 123)" {
+		t.Fatalf("expect: %v got: %v", "", got)
+	}
+}
+
+func TestPrintExpr(t *testing.T) {
+	// -123 * (45.67)
 	expr := &Binary{
 		Left: &Unary{
 			Operation: scanner.Token{TokenType: scanner.MINUS, Lexeme: &minus},
@@ -21,7 +44,7 @@ func TestPrint(t *testing.T) {
 		},
 		Right: &Grouping{&Literal{Value: 45.67}},
 	}
-	_ = expr
+	printer := &AstPrinter{}
 	got := expr.Accept(printer)
 	if got != "(* (- 123) (grouping 45.67))" {
 		t.Fatalf("expect: %v got: %v", "", got)
