@@ -7,3 +7,6 @@ run_prompt:
 test:
 	go generate
 	go test ./...
+
+gen_tokens:
+	go run token/main.go token
