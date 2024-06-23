@@ -4,7 +4,9 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"github.com/nesyuk/golox/parser"
 	"github.com/nesyuk/golox/scanner"
+	"github.com/nesyuk/golox/token"
 	"io"
 	"os"
 )
@@ -15,11 +17,20 @@ func run(source string) error {
 	sc := scanner.NewScanner(source)
 	tokens, err := sc.ScanTokens()
 	if err != nil {
+		// TODO: handle scanner error
 		return err
 	}
-	for _, t := range tokens {
-		fmt.Println(t)
+	p := parser.NewParser(tokens)
+	ast, err := p.Parse()
+	if err != nil && hadError {
+		// TODO handle parser error
+		return err
 	}
+	if err != nil {
+
+	}
+	printer := token.AstPrinter{}
+	printer.Print(ast)
 	return nil
 }
 
