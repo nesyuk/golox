@@ -13,7 +13,10 @@ var (
 func TestPrintPrimary(t *testing.T) {
 	printer := &AstPrinter{}
 	expr := &Literal{Value: 123}
-	got := expr.Accept(printer)
+	got, err := expr.Accept(printer)
+	if err != nil {
+		t.Error(err)
+	}
 	if got != "123" {
 		t.Fatalf("expect: %v got: %v", "", got)
 	}
@@ -25,7 +28,10 @@ func TestPrintUnary(t *testing.T) {
 		Right:     &Literal{Value: 123},
 	}
 	printer := &AstPrinter{}
-	got := expr.Accept(printer)
+	got, err := expr.Accept(printer)
+	if err != nil {
+		t.Error(err)
+	}
 	if got != "(- 123)" {
 		t.Fatalf("expect: %v got: %v", "", got)
 	}
@@ -45,7 +51,10 @@ func TestPrintExpr(t *testing.T) {
 		Right: &Grouping{&Literal{Value: 45.67}},
 	}
 	printer := &AstPrinter{}
-	got := expr.Accept(printer)
+	got, err := expr.Accept(printer)
+	if err != nil {
+		t.Error(err)
+	}
 	if got != "(* (- 123) (grouping 45.67))" {
 		t.Fatalf("expect: %v got: %v", "", got)
 	}
