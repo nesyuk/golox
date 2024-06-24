@@ -1,6 +1,9 @@
 package parser
 
 import (
+	"errors"
+	"fmt"
+	"github.com/nesyuk/golox/formatter"
 	"github.com/nesyuk/golox/scanner"
 	"github.com/nesyuk/golox/token"
 )
@@ -18,6 +21,7 @@ import (
 type Parser struct {
 	tokens  []scanner.Token
 	current int
+	errors  []error
 }
 
 func NewParser(tokens []scanner.Token) *Parser {
@@ -25,7 +29,14 @@ func NewParser(tokens []scanner.Token) *Parser {
 }
 
 func (p *Parser) Parse() (token.Expr, error) {
-	return p.expression()
+	expr, err := p.expression()
+	if err != nil {
+		return nil, err
+	}
+	if len(p.errors) == 0 {
+		return expr, nil
+	}
+	return expr, errors.Join(p.errors...)
 }
 
 func (p *Parser) expression() (token.Expr, error) {
@@ -125,15 +136,15 @@ func (p *Parser) primary() (token.Expr, error) {
 		expr, err := p.expression()
 		if err != nil {
 		}
-		_, err = p.consume(scanner.RIGHT_BRACE, "Expect ')' after expression.")
-		if err != nil {
+		if _, err = p.consume(scanner.RIGHT_BRACE, "Expect ')' after expression."); err != nil {
 			// TODO: handle error
+			p.errors = append(p.errors, err)
 			return nil, err
 		}
 		return &token.Grouping{Expression: expr}, nil
 
 	}
-	return nil, &Error{"Expect expression"}
+	return nil, errors.New("expect expression")
 }
 
 func (p *Parser) match(tokens ...scanner.TokenType) bool {
@@ -151,8 +162,7 @@ func (p *Parser) consume(tt scanner.TokenType, msg string) (*scanner.Token, erro
 		t := p.advance()
 		return &t, nil
 	}
-	// TODO: Lox.error()
-	return nil, &Error{Message: msg}
+	return nil, &Error{Token: p.peek(), Message: msg}
 }
 
 func (p *Parser) check(t scanner.TokenType) bool {
@@ -182,9 +192,14 @@ func (p *Parser) previous() scanner.Token {
 }
 
 type Error struct {
+	Token   scanner.Token
 	Message string
 }
 
-func (err *Error) Error() string {
-	return ""
+func (e *Error) Error() string {
+	if e.Token.TokenType == scanner.EOF {
+		return formatter.ReportError(e.Token.Line, " at end", e.Message)
+	} else {
+		return formatter.ReportError(e.Token.Line, fmt.Sprintf(" at '%v'", e.Token.Lexeme), e.Message)
+	}
 }

@@ -1,7 +1,8 @@
 package scanner
 
 import (
-	"fmt"
+	"errors"
+	"github.com/nesyuk/golox/formatter"
 	"strconv"
 )
 
@@ -24,15 +25,6 @@ var keywords = map[string]TokenType{
 	"while":  WHILE,
 }
 
-type LoxError struct {
-	line    int
-	message string
-}
-
-func (e *LoxError) Error() string {
-	return fmt.Sprintf("%d %v\n", e.line, e.message)
-}
-
 type Scanner struct {
 	source         string
 	tokens         []Token
@@ -45,16 +37,19 @@ func NewScanner(source string) *Scanner {
 }
 
 func (sc *Scanner) ScanTokens() ([]Token, error) {
+	errs := make([]error, 0)
 	sc.start = sc.current
 	for !sc.isAtEnd() {
 		sc.start = sc.current
 		if err := sc.scanToken(); err != nil {
-			return sc.tokens, err
+			errs = append(errs, err)
 		}
 	}
 	sc.tokens = append(sc.tokens, Token{TokenType: EOF})
-
-	return sc.tokens, nil
+	if len(errs) == 0 {
+		return sc.tokens, nil
+	}
+	return sc.tokens, errors.Join(errs...)
 }
 
 func (sc *Scanner) scanToken() error {
@@ -114,8 +109,9 @@ func (sc *Scanner) scanToken() error {
 	case isAlpha(char):
 		return sc.addIdentifier()
 	default:
-		return &LoxError{sc.line, "Unexpected character."}
+		return &Error{sc.line, "Unexpected character."}
 	}
+	// unreachable code
 	return nil
 }
 
@@ -157,7 +153,7 @@ func (sc *Scanner) addNumberToken() error {
 	}
 	value, err := strconv.ParseFloat(sc.source[sc.start:sc.current], 64)
 	if err != nil {
-		return &LoxError{sc.line, err.Error()}
+		return &Error{sc.line, "Unexpected character."}
 	}
 	sc.addTokenLiteral(NUMBER, value)
 	return nil
@@ -171,9 +167,9 @@ func (sc *Scanner) addStringToken() error {
 		sc.advance()
 	}
 	if sc.isAtEnd() {
-		return &LoxError{sc.line, "Unterminated string."}
+		return &Error{sc.line, "Unterminated string."}
 	}
-	// Closing " .
+	// The closing " .
 	sc.advance()
 
 	value := sc.source[sc.start+1 : sc.current-1] //
@@ -231,4 +227,13 @@ func isAlpha(char byte) bool {
 
 func isDigit(char byte) bool {
 	return char >= '0' && char <= '9'
+}
+
+type Error struct {
+	line    int
+	message string
+}
+
+func (e *Error) Error() string {
+	return formatter.ReportError(e.line, "", e.message)
 }

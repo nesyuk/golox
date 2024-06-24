@@ -8,15 +8,15 @@ import (
 type Interpreter struct {
 }
 
-func (i *Interpreter) Eval(expr token.Expr) interface{} {
+func (i *Interpreter) Eval(expr token.Expr) (interface{}, error) {
 	return expr.Accept(i)
 }
 
-func (i *Interpreter) VisitLiteral(expr *token.Literal) interface{} {
-	return expr.Value
+func (i *Interpreter) VisitLiteral(expr *token.Literal) (interface{}, error) {
+	return expr.Value, nil
 }
 
-func (i *Interpreter) VisitUnary(expr *token.Unary) interface{} {
+func (i *Interpreter) VisitUnary(expr *token.Unary) (interface{}, error) {
 	right := i.Eval(expr.Right)
 	switch expr.Operation.TokenType {
 	case scanner.BANG:
@@ -29,9 +29,9 @@ func (i *Interpreter) VisitUnary(expr *token.Unary) interface{} {
 	return nil
 }
 
-func (i *Interpreter) VisitBinary(expr *token.Binary) interface{} {
-	left := i.Eval(expr.Left)
-	right := i.Eval(expr.Right)
+func (i *Interpreter) VisitBinary(expr *token.Binary) (interface{}, error) {
+	left, err := i.Eval(expr.Left)
+	right, err := i.Eval(expr.Right)
 
 	switch expr.Operation.TokenType {
 	case scanner.MINUS:
@@ -72,7 +72,7 @@ func (i *Interpreter) VisitBinary(expr *token.Binary) interface{} {
 	return nil
 }
 
-func (i *Interpreter) VisitGrouping(expr *token.Grouping) interface{} {
+func (i *Interpreter) VisitGrouping(expr *token.Grouping) (interface{}, error) {
 	return i.Eval(expr.Expression)
 }
 

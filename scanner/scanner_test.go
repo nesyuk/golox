@@ -96,6 +96,49 @@ func TestScanTokensIgnored(t *testing.T) {
 	}
 }
 
+func TestScanTokensError(t *testing.T) {
+	for _, test := range []struct {
+		text      string
+		expectErr string
+	}{
+		{"\"missing quote", "[line 1] Error: Unterminated string."},
+		{"~", "[line 1] Error: Unexpected character."},
+	} {
+		sc := NewScanner(test.text)
+		got, err := sc.ScanTokens()
+		if err == nil {
+			t.Fatalf("expect err\n")
+		}
+		if err.Error() != test.expectErr {
+			t.Fatalf("expect: %v, got: %v\n", test.expectErr, err.Error())
+		}
+		if len(got) != 1 {
+			t.Fatalf("expect len(1), got: %d\n", len(got))
+		}
+	}
+}
+
+func TestScanTokenErrors(t *testing.T) {
+	for _, test := range []struct {
+		text      string
+		expectErr string
+	}{
+		{"@ > \n\"2", "[line 1] Error: Unexpected character.\n[line 2] Error: Unterminated string."},
+	} {
+		sc := NewScanner(test.text)
+		got, err := sc.ScanTokens()
+		if err == nil {
+			t.Fatalf("expect err\n")
+		}
+		if err.Error() != test.expectErr {
+			t.Fatalf("expect: %v, got: %v\n", test.expectErr, err.Error())
+		}
+		if len(got) != 2 {
+			t.Fatalf("expect len(1), got: %d\n", len(got))
+		}
+	}
+}
+
 func getStrPtr(s string) *string {
 	return &s
 }

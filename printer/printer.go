@@ -1,19 +1,20 @@
-package token
+package printer
 
 import (
 	"fmt"
+	"github.com/nesyuk/golox/token"
 	"strings"
 )
 
-type AstPrinter struct {
+type Ast struct {
 }
 
-func (p *AstPrinter) Print(e Expr) (string, error) {
+func (p *Ast) Print(e token.Expr) (string, error) {
 	result, err := e.Accept(p)
 	return result.(string), err
 }
 
-func (p *AstPrinter) parenthesize(op string, exprs ...Expr) (string, error) {
+func (p *Ast) parenthesize(op string, exprs ...token.Expr) (string, error) {
 	sb := strings.Builder{}
 	sb.WriteString("(")
 	sb.WriteString(op)
@@ -29,14 +30,14 @@ func (p *AstPrinter) parenthesize(op string, exprs ...Expr) (string, error) {
 	return sb.String(), nil
 }
 
-func (p *AstPrinter) VisitLiteral(e *Literal) (interface{}, error) {
+func (p *Ast) VisitLiteral(e *token.Literal) (interface{}, error) {
 	if e.Value == nil {
 		return "nil", nil
 	}
 	return fmt.Sprintf("%v", e.Value), nil
 }
 
-func (p *AstPrinter) VisitUnary(e *Unary) (interface{}, error) {
+func (p *Ast) VisitUnary(e *token.Unary) (interface{}, error) {
 	op := ""
 	if e.Operation.Lexeme != nil {
 		op = *e.Operation.Lexeme
@@ -44,7 +45,7 @@ func (p *AstPrinter) VisitUnary(e *Unary) (interface{}, error) {
 	return p.parenthesize(op, e.Right)
 }
 
-func (p *AstPrinter) VisitBinary(e *Binary) (interface{}, error) {
+func (p *Ast) VisitBinary(e *token.Binary) (interface{}, error) {
 	op := ""
 	if e.Operation.Lexeme != nil {
 		op = *e.Operation.Lexeme
@@ -52,6 +53,6 @@ func (p *AstPrinter) VisitBinary(e *Binary) (interface{}, error) {
 	return p.parenthesize(op, e.Left, e.Right)
 }
 
-func (p *AstPrinter) VisitGrouping(e *Grouping) (interface{}, error) {
+func (p *Ast) VisitGrouping(e *token.Grouping) (interface{}, error) {
 	return p.parenthesize("grouping", e.Expression)
 }

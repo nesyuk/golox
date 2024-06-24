@@ -1,7 +1,8 @@
-package token
+package printer
 
 import (
 	"github.com/nesyuk/golox/scanner"
+	"github.com/nesyuk/golox/token"
 	"testing"
 )
 
@@ -11,8 +12,8 @@ var (
 )
 
 func TestPrintPrimary(t *testing.T) {
-	printer := &AstPrinter{}
-	expr := &Literal{Value: 123}
+	printer := &Ast{}
+	expr := &token.Literal{Value: 123}
 	got, err := expr.Accept(printer)
 	if err != nil {
 		t.Error(err)
@@ -23,11 +24,11 @@ func TestPrintPrimary(t *testing.T) {
 }
 
 func TestPrintUnary(t *testing.T) {
-	expr := &Unary{
+	expr := &token.Unary{
 		Operation: scanner.Token{TokenType: scanner.MINUS, Lexeme: &minus},
-		Right:     &Literal{Value: 123},
+		Right:     &token.Literal{Value: 123},
 	}
-	printer := &AstPrinter{}
+	printer := &Ast{}
 	got, err := expr.Accept(printer)
 	if err != nil {
 		t.Error(err)
@@ -39,18 +40,18 @@ func TestPrintUnary(t *testing.T) {
 
 func TestPrintExpr(t *testing.T) {
 	// -123 * (45.67)
-	expr := &Binary{
-		Left: &Unary{
+	expr := &token.Binary{
+		Left: &token.Unary{
 			Operation: scanner.Token{TokenType: scanner.MINUS, Lexeme: &minus},
-			Right:     &Literal{Value: 123},
+			Right:     &token.Literal{Value: 123},
 		},
 		Operation: scanner.Token{
 			TokenType: scanner.STAR,
 			Lexeme:    &star,
 		},
-		Right: &Grouping{&Literal{Value: 45.67}},
+		Right: &token.Grouping{Expression: &token.Literal{Value: 45.67}},
 	}
-	printer := &AstPrinter{}
+	printer := &Ast{}
 	got, err := expr.Accept(printer)
 	if err != nil {
 		t.Error(err)
