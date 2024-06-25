@@ -8,40 +8,50 @@ import (
 
 func TestInterpretLiteralFloat(t *testing.T) {
 	expr := &token.Literal{Value: 123.}
-	i := &Interpreter{}
-	got := i.Eval(expr)
-	result, ok := got.(float64)
-	if !ok {
-		t.Fatalf("expected float64 got %T", got)
+	errs := make([]string, 0)
+	i := New(testCallBack(&errs))
+	got, err := i.Interpret(expr)
+	if err != nil {
+		t.Error(err)
 	}
-	if result != 123. {
-		t.Fatalf("expected 123. got %f", result)
+	if len(errs) != 0 {
+		t.Fatalf("expect len(1), got: %d", len(errs))
+	}
+	if got != "123" {
+		t.Fatalf("expected '123' got '%v'", got)
 	}
 }
 
 func TestInterpretLiteralString(t *testing.T) {
 	expr := &token.Literal{Value: "abc"}
-	i := &Interpreter{}
-	got := i.Eval(expr)
-	result, ok := got.(string)
-	if !ok {
-		t.Fatalf("expected string got %T", got)
+	errs := make([]string, 0)
+	i := New(testCallBack(&errs))
+	got, err := i.Interpret(expr)
+	if err != nil {
+		t.Error(err)
 	}
-	if result != "abc" {
-		t.Fatalf("expected abc got %v", result)
+	if len(errs) != 0 {
+		t.Fatalf("expect len(1), got: %d", len(errs))
+	}
+
+	if got != "abc" {
+		t.Fatalf("expected 'abc' got '%v'", got)
 	}
 }
 
 func TestInterpretLiteralBoolean(t *testing.T) {
 	expr := &token.Literal{Value: true}
-	i := &Interpreter{}
-	got := i.Eval(expr)
-	result, ok := got.(bool)
-	if !ok {
-		t.Fatalf("expected bool got %T", got)
+	errs := make([]string, 0)
+	i := New(testCallBack(&errs))
+	got, err := i.Interpret(expr)
+	if err != nil {
+		t.Error(err)
 	}
-	if result != true {
-		t.Fatalf("expected true got %v", result)
+	if len(errs) != 0 {
+		t.Fatalf("expect len(1), got: %d", len(errs))
+	}
+	if got != "true" {
+		t.Fatalf("expected 'true' got '%v'", got)
 	}
 }
 
@@ -50,38 +60,74 @@ func TestInterpretUnaryMinus(t *testing.T) {
 		Operation: scanner.Token{TokenType: scanner.MINUS},
 		Right:     &token.Literal{Value: 123.0},
 	}
-	i := &Interpreter{}
-	got := i.Eval(expr)
-	if got != -123.0 {
-		t.Fatalf("expect: %v got: %v", -123.0, got)
+	errs := make([]string, 0)
+	i := New(testCallBack(&errs))
+	got, err := i.Interpret(expr)
+	if err != nil {
+		t.Error(err)
+	}
+	if len(errs) != 0 {
+		t.Fatalf("expect len(1), got: %d", len(errs))
+	}
+	if got != "-123" {
+		t.Fatalf("expect: '-123' got: '%v'", got)
+	}
+}
+
+func TestInterpretUnaryError(t *testing.T) {
+	expr := &token.Unary{
+		Operation: scanner.Token{TokenType: scanner.MINUS},
+		Right:     &token.Literal{Value: "muffin"},
+	}
+	errs := make([]string, 0)
+	i := New(testCallBack(&errs))
+	got, err := i.Interpret(expr)
+	if err != nil {
+		t.Fatalf("expect nil")
+	}
+	if len(errs) != 1 {
+		t.Fatalf("expect len(1), got: %d", len(errs))
+	}
+	if got != "" {
+		t.Fatalf("expect empty")
+	}
+	if errs[0] != "Operand must be a number." {
+		t.Fatalf("expect %v got %v", "Operand must be a number.", err.Error())
 	}
 }
 
 func TestInterpretUnaryBang(t *testing.T) {
 	tests := []struct {
 		expr   token.Expr
-		expect bool
+		expect string
 	}{
 		{&token.Unary{
 			Operation: scanner.Token{TokenType: scanner.BANG},
 			Right:     &token.Literal{Value: 123.0},
-		}, false},
+		}, "false"},
 		{&token.Unary{
 			Operation: scanner.Token{TokenType: scanner.BANG},
 			Right:     &token.Literal{Value: "abc"},
-		}, false},
+		}, "false"},
 		{&token.Unary{
 			Operation: scanner.Token{TokenType: scanner.BANG},
 			Right:     &token.Literal{Value: true},
-		}, false},
+		}, "false"},
 		{&token.Unary{
 			Operation: scanner.Token{TokenType: scanner.BANG},
 			Right:     &token.Literal{Value: false},
-		}, true},
+		}, "true"},
 	}
-	i := &Interpreter{}
+	errs := make([]string, 0)
+	i := New(testCallBack(&errs))
 	for _, test := range tests {
-		got := i.Eval(test.expr)
+		got, err := i.Interpret(test.expr)
+		if err != nil {
+			t.Error(err)
+		}
+		if len(errs) != 0 {
+			t.Fatalf("expect len(1), got: %d", len(errs))
+		}
 		if got != test.expect {
 			t.Fatalf("expect: %v got: %v", test.expect, got)
 		}
@@ -91,13 +137,13 @@ func TestInterpretUnaryBang(t *testing.T) {
 func TestInterpretBinary(t *testing.T) {
 	tests := []struct {
 		expr   token.Expr
-		expect interface{}
+		expect string
 	}{
 		{&token.Binary{
 			Left:      &token.Literal{Value: 40.02},
 			Operation: scanner.Token{TokenType: scanner.PLUS},
 			Right:     &token.Literal{Value: 2.40},
-		}, 42.42},
+		}, "42.42"},
 		{&token.Binary{
 			Left:      &token.Literal{Value: "Hello, "},
 			Operation: scanner.Token{TokenType: scanner.PLUS},
@@ -107,69 +153,99 @@ func TestInterpretBinary(t *testing.T) {
 			Left:      &token.Literal{Value: 16.0},
 			Operation: scanner.Token{TokenType: scanner.STAR},
 			Right:     &token.Literal{Value: 2.0},
-		}, 32.0},
+		}, "32"},
 		{&token.Binary{
 			Left:      &token.Literal{Value: 256.0},
 			Operation: scanner.Token{TokenType: scanner.SLASH},
 			Right:     &token.Literal{Value: 2.0},
-		}, 128.0},
+		}, "128"},
 		{&token.Binary{
 			Left:      &token.Literal{Value: 2.0},
 			Operation: scanner.Token{TokenType: scanner.GREATER},
 			Right:     &token.Literal{Value: 1.0},
-		}, true},
+		}, "true"},
 		{&token.Binary{
 			Left:      &token.Literal{Value: 2.4},
 			Operation: scanner.Token{TokenType: scanner.GREATER_EQUAL},
 			Right:     &token.Literal{Value: 2.4},
-		}, true},
+		}, "true"},
 		{&token.Binary{
 			Left:      &token.Literal{Value: 2.0},
 			Operation: scanner.Token{TokenType: scanner.LESS},
 			Right:     &token.Literal{Value: 1.0},
-		}, false},
+		}, "false"},
 		{&token.Binary{
 			Left:      &token.Literal{Value: 2.4},
 			Operation: scanner.Token{TokenType: scanner.LESS_EQUAL},
 			Right:     &token.Literal{Value: 2.4},
-		}, true},
+		}, "true"},
 		{&token.Binary{
 			Left:      &token.Literal{Value: 2.4},
 			Operation: scanner.Token{TokenType: scanner.EQUAL_EQUAL},
 			Right:     &token.Literal{Value: 2.4},
-		}, true},
+		}, "true"},
 		{&token.Binary{
 			Left:      &token.Literal{Value: "lox"},
 			Operation: scanner.Token{TokenType: scanner.EQUAL_EQUAL},
 			Right:     &token.Literal{Value: "lox"},
-		}, true},
+		}, "true"},
 		{&token.Binary{
 			Left:      &token.Literal{Value: 2.4},
 			Operation: scanner.Token{TokenType: scanner.BANG_EQUAL},
 			Right:     &token.Literal{Value: 2.4},
-		}, false},
+		}, "false"},
 		{&token.Binary{
 			Left:      &token.Literal{Value: "lox"},
 			Operation: scanner.Token{TokenType: scanner.BANG_EQUAL},
 			Right:     &token.Literal{Value: "lox"},
-		}, false},
+		}, "false"},
 		{&token.Binary{
 			Left:      &token.Literal{Value: "lox"},
 			Operation: scanner.Token{TokenType: scanner.BANG_EQUAL},
 			Right:     &token.Literal{Value: nil},
-		}, true},
+		}, "true"},
 		{&token.Binary{
 			Left:      &token.Literal{Value: 2.4},
 			Operation: scanner.Token{TokenType: scanner.BANG_EQUAL},
 			Right:     &token.Literal{Value: "lox"},
-		}, true},
+		}, "true"},
 	}
-	i := &Interpreter{}
+	errs := make([]string, 0)
+	i := New(testCallBack(&errs))
 	for _, test := range tests {
-		got := i.Eval(test.expr)
+		got, err := i.Interpret(test.expr)
+		if err != nil {
+			t.Error(err)
+		}
+		if len(errs) != 0 {
+			t.Fatalf("expect len(1), got: %d", len(errs))
+		}
 		if got != test.expect {
 			t.Fatalf("expect: %v got: %v", test.expect, got)
 		}
+	}
+}
+
+func TestInterpretBinaryError(t *testing.T) {
+	expr := &token.Binary{
+		Left:      &token.Literal{Value: 16.0},
+		Operation: scanner.Token{TokenType: scanner.STAR},
+		Right:     &token.Literal{Value: "muffin"},
+	}
+	errs := make([]string, 0)
+	i := New(testCallBack(&errs))
+	got, err := i.Interpret(expr)
+	if err != nil {
+		t.Fatalf("expect nil")
+	}
+	if len(errs) != 1 {
+		t.Fatalf("expect len(%d) got %d", 1, len(errs))
+	}
+	if got != "" {
+		t.Fatalf("expect empty")
+	}
+	if errs[0] != "Operands must be a numbers." {
+		t.Fatalf("expect %v got %v", "Operands must be a numbers.", err.Error())
 	}
 }
 
@@ -185,9 +261,13 @@ func TestInterpretBinaryDivisionByZero(t *testing.T) {
 			Right:     &token.Literal{Value: 0.0},
 		}, nil},
 	}
-	i := &Interpreter{}
+	errs := make([]string, 0)
+	i := New(testCallBack(&errs))
 	for _, test := range tests {
-		got := i.Eval(test.expr)
+		got, err := i.Interpret(test.expr)
+		if err != nil {
+			t.Error(err)
+		}
 		if got != test.expect {
 			t.Fatalf("expect: %v got: %v", test.expect, got)
 		}
@@ -195,8 +275,15 @@ func TestInterpretBinaryDivisionByZero(t *testing.T) {
 }
 
 func TestIsTruthy(t *testing.T) {
-	i := &Interpreter{}
+	errs := make([]string, 0)
+	i := New(testCallBack(&errs))
 	if i.isTruthy(nil) {
 		t.Fatalf("expected false")
+	}
+}
+
+var testCallBack = func(errs *[]string) ErrorCallback {
+	return func(err *RuntimeError) {
+		*errs = append(*errs, err.Error())
 	}
 }

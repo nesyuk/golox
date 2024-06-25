@@ -3,44 +3,71 @@ package lox
 import (
 	"bufio"
 	"fmt"
+	"github.com/nesyuk/golox/interpreter"
 	"github.com/nesyuk/golox/parser"
-	"github.com/nesyuk/golox/printer"
 	"github.com/nesyuk/golox/scanner"
 	"io"
-	"log"
 	"os"
 )
 
-var hadError = false
+type golox struct {
+	interpret       *interpreter.Interpreter
+	hadError        bool
+	hadRuntimeError bool
+}
 
-func run(source string) error {
-	sc := scanner.NewScanner(source)
-	tokens, err := sc.ScanTokens()
-	if err != nil {
-		// TODO: handle scanner error
-		return err
+func newLox() *golox {
+	return &golox{&interpreter.Interpreter{}, false, false}
+}
+
+func (l *golox) run(source string) (string, error) {
+	if l.hadError {
+		os.Exit(65)
 	}
-	p := parser.NewParser(tokens)
+	if l.hadRuntimeError {
+		os.Exit(70)
+	}
+	sc := scanner.NewScanner(source, l.error)
+	tokens := sc.ScanTokens()
+
+	p := parser.NewParser(tokens, l.parseError)
 	ast, err := p.Parse()
-	if err != nil && hadError {
-		// TODO handle parser error
-		return err
+	if err != nil || l.hadError {
+		return "", err
 	}
+
+	i := interpreter.New(l.runtimeError)
+	result, err := i.Interpret(ast)
 	if err != nil {
-
+		return "", err
 	}
-	printer := printer.Ast{}
-	printer.Print(ast)
-	return nil
+	return result, nil
 }
 
-func logError(line int, message string) {
-	report(line, "", message)
+func (l *golox) runtimeError(err *interpreter.RuntimeError) {
+	fmt.Printf("%v\n[line %d]\n", err.Error(), err.Token.Line)
+	l.hadRuntimeError = true
 }
 
-func report(line int, where string, message string) {
-	log.Printf("[line %d] Error%v: %v\n", line, where, message)
-	hadError = true
+func (l *golox) parseError(token scanner.Token, message string) {
+	if token.TokenType == scanner.EOF {
+		l.report(token.Line, " at end", message)
+	} else {
+		l.report(token.Line, fmt.Sprintf(" at '%v'", *token.Lexeme), message)
+	}
+}
+
+func (l *golox) error(line int, message string) {
+	l.report(line, "", message)
+}
+
+func (l *golox) report(line int, where string, message string) {
+	fmt.Printf("[line %d] Error%v: %v\n", line, where, message)
+	l.hadError = true
+}
+
+func (l *golox) ResetError() {
+	l.hadError = false
 }
 
 func RunFile(f string) error {
@@ -48,13 +75,17 @@ func RunFile(f string) error {
 	if err != nil {
 		return err
 	}
-	if err := run(string(s)); err != nil {
+	lox := newLox()
+	result, err := lox.run(string(s))
+	if err != nil {
 		os.Exit(65)
 	}
+	fmt.Println(result)
 	return nil
 }
 
 func RunPrompt() {
+	lox := newLox()
 	for {
 		fmt.Print("> ")
 		r := bufio.NewReader(os.Stdin)
@@ -62,9 +93,12 @@ func RunPrompt() {
 		if err == io.EOF {
 			return
 		}
-		if err = run(s); err != nil {
+		result, err := lox.run(s)
+		if err != nil {
 			fmt.Printf("failed to interpret: %v\n", err)
-			hadError = false
+			lox.ResetError()
+		} else {
+			fmt.Println(result)
 		}
 	}
 }

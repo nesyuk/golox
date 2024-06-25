@@ -1,6 +1,9 @@
 package scanner
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 func TestScanTokens(t *testing.T) {
 	for _, test := range []struct {
@@ -46,11 +49,9 @@ func TestScanTokens(t *testing.T) {
 		{"var", Token{VAR, getStrPtr("var"), nil, 1}},
 		{"while", Token{WHILE, getStrPtr("while"), nil, 1}},
 	} {
-		sc := NewScanner(test.str)
-		got, err := sc.ScanTokens()
-		if err != nil {
-			t.Error(err)
-		}
+		errors := make([]string, 0)
+		sc := NewScanner(test.str, testCallBack(&errors))
+		got := sc.ScanTokens()
 		if len(got) != 2 {
 			t.Fatalf("expect len(1), got: %d\n", len(got))
 		}
@@ -77,15 +78,41 @@ func TestScanTokens(t *testing.T) {
 	}
 }
 
+func TestScanTokensExpression(t *testing.T) {
+	for _, test := range []struct {
+		str    string
+		tokens []Token
+	}{
+		{"(3 + 2", []Token{
+			{LEFT_PAREN, getStrPtr("("), nil, 1},
+			{NUMBER, getStrPtr("3"), 3, 1},
+			{PLUS, nil, nil, 1},
+			{NUMBER, getStrPtr("2"), 2, 1},
+			{EOF, nil, 2, 1},
+		},
+		},
+	} {
+		errors := make([]string, 0)
+		sc := NewScanner(test.str, testCallBack(&errors))
+		got := sc.ScanTokens()
+		if len(got) != len(test.tokens) {
+			t.Fatalf("expect len(%d), got: %d\n", len(test.tokens), len(got))
+		}
+		for i := range got {
+			if got[i].TokenType != test.tokens[i].TokenType {
+				t.Fatalf("expect: %v got: %v", test.tokens[i].TokenType, got[i].TokenType)
+			}
+		}
+	}
+}
+
 func TestScanTokensIgnored(t *testing.T) {
 	for _, test := range []string{
 		"// this is a comment", " ", "\r", "\t", "\n",
 	} {
-		sc := NewScanner(test)
-		got, err := sc.ScanTokens()
-		if err != nil {
-			t.Error(err)
-		}
+		errors := make([]string, 0)
+		sc := NewScanner(test, testCallBack(&errors))
+		got := sc.ScanTokens()
 		if len(got) != 1 {
 			t.Fatalf("expect len(1), got: %d\n", len(got))
 		}
@@ -98,47 +125,59 @@ func TestScanTokensIgnored(t *testing.T) {
 
 func TestScanTokensError(t *testing.T) {
 	for _, test := range []struct {
-		text      string
-		expectErr string
+		str    string
+		errors []string
 	}{
-		{"\"missing quote", "[line 1] Error: Unterminated string."},
-		{"~", "[line 1] Error: Unexpected character."},
+		{"\"missing quote", []string{"[line 1] Error: Unterminated string."}},
+		{"~", []string{"[line 1] Error: Unexpected character."}},
 	} {
-		sc := NewScanner(test.text)
-		got, err := sc.ScanTokens()
-		if err == nil {
-			t.Fatalf("expect err\n")
-		}
-		if err.Error() != test.expectErr {
-			t.Fatalf("expect: %v, got: %v\n", test.expectErr, err.Error())
-		}
+		errors := make([]string, 0)
+		sc := NewScanner(test.str, testCallBack(&errors))
+		got := sc.ScanTokens()
 		if len(got) != 1 {
-			t.Fatalf("expect len(1), got: %d\n", len(got))
+			t.Fatalf("expect nil, got %v", got)
+		}
+		if len(errors) != len(test.errors) {
+			t.Fatalf("extect len(errors): %d, got: %d", len(errors), len(test.errors))
+		}
+		for i := range errors {
+			if errors[i] != test.errors[i] {
+				t.Fatalf("expect: %v got %v", test.errors[i], errors[i])
+			}
 		}
 	}
 }
 
 func TestScanTokenErrors(t *testing.T) {
 	for _, test := range []struct {
-		text      string
-		expectErr string
+		str    string
+		errors []string
 	}{
-		{"@ > \n\"2", "[line 1] Error: Unexpected character.\n[line 2] Error: Unterminated string."},
+		{"@ > \n\"2", []string{"[line 1] Error: Unexpected character.", "[line 2] Error: Unterminated string."}},
 	} {
-		sc := NewScanner(test.text)
-		got, err := sc.ScanTokens()
-		if err == nil {
-			t.Fatalf("expect err\n")
-		}
-		if err.Error() != test.expectErr {
-			t.Fatalf("expect: %v, got: %v\n", test.expectErr, err.Error())
-		}
+		errors := make([]string, 0)
+		sc := NewScanner(test.str, testCallBack(&errors))
+		got := sc.ScanTokens()
 		if len(got) != 2 {
-			t.Fatalf("expect len(1), got: %d\n", len(got))
+			t.Fatalf("expect: %d got %d", 2, len(got))
+		}
+		if len(errors) != len(test.errors) {
+			t.Fatalf("extect len(errors): %d, got: %d", len(test.errors), len(errors))
+		}
+		for i := range errors {
+			if errors[i] != test.errors[i] {
+				t.Fatalf("expect: %v got %v", test.errors[i], errors[i])
+			}
 		}
 	}
 }
 
 func getStrPtr(s string) *string {
 	return &s
+}
+
+var testCallBack = func(errs *[]string) ErrorCallback {
+	return func(line int, message string) {
+		*errs = append(*errs, fmt.Sprintf("[line %d] Error: %v", line, message))
+	}
 }

@@ -1,8 +1,6 @@
 package scanner
 
 import (
-	"errors"
-	"github.com/nesyuk/golox/formatter"
 	"strconv"
 )
 
@@ -30,29 +28,24 @@ type Scanner struct {
 	tokens         []Token
 	start, current int
 	line           int
+	errorCallback  ErrorCallback
 }
 
-func NewScanner(source string) *Scanner {
-	return &Scanner{source: source, tokens: make([]Token, 0), start: 0, current: 0, line: 1}
+func NewScanner(source string, onError ErrorCallback) *Scanner {
+	return &Scanner{source: source, tokens: make([]Token, 0), start: 0, current: 0, line: 1, errorCallback: onError}
 }
 
-func (sc *Scanner) ScanTokens() ([]Token, error) {
-	errs := make([]error, 0)
+func (sc *Scanner) ScanTokens() []Token {
 	sc.start = sc.current
 	for !sc.isAtEnd() {
 		sc.start = sc.current
-		if err := sc.scanToken(); err != nil {
-			errs = append(errs, err)
-		}
+		sc.scanToken()
 	}
 	sc.tokens = append(sc.tokens, Token{TokenType: EOF})
-	if len(errs) == 0 {
-		return sc.tokens, nil
-	}
-	return sc.tokens, errors.Join(errs...)
+	return sc.tokens
 }
 
-func (sc *Scanner) scanToken() error {
+func (sc *Scanner) scanToken() {
 	char := sc.advance()
 	switch {
 	case char == '(':
@@ -103,16 +96,14 @@ func (sc *Scanner) scanToken() error {
 	case char == '\n':
 		sc.line++
 	case char == '"':
-		return sc.addStringToken()
+		sc.addStringToken()
 	case isDigit(char):
-		return sc.addNumberToken()
+		sc.addNumberToken()
 	case isAlpha(char):
-		return sc.addIdentifier()
+		sc.addIdentifier()
 	default:
-		return &Error{sc.line, "Unexpected character."}
+		sc.errorCallback(sc.line, "Unexpected character.")
 	}
-	// unreachable code
-	return nil
 }
 
 func (sc *Scanner) addToken(tokenType TokenType) {
@@ -124,7 +115,7 @@ func (sc *Scanner) addTokenLiteral(tokenType TokenType, literal interface{}) {
 	sc.tokens = append(sc.tokens, Token{TokenType: tokenType, Lexeme: &lexeme, Literal: literal, Line: sc.line})
 }
 
-func (sc *Scanner) addIdentifier() error {
+func (sc *Scanner) addIdentifier() {
 	for isAlphaNum(sc.peek()) {
 		sc.advance()
 	}
@@ -135,11 +126,9 @@ func (sc *Scanner) addIdentifier() error {
 	} else {
 		sc.addToken(IDENTIFIER)
 	}
-
-	return nil
 }
 
-func (sc *Scanner) addNumberToken() error {
+func (sc *Scanner) addNumberToken() {
 	for isDigit(sc.peek()) {
 		sc.advance()
 	}
@@ -153,13 +142,13 @@ func (sc *Scanner) addNumberToken() error {
 	}
 	value, err := strconv.ParseFloat(sc.source[sc.start:sc.current], 64)
 	if err != nil {
-		return &Error{sc.line, "Unexpected character."}
+		sc.errorCallback(sc.line, "Unexpected character.")
+		return
 	}
 	sc.addTokenLiteral(NUMBER, value)
-	return nil
 }
 
-func (sc *Scanner) addStringToken() error {
+func (sc *Scanner) addStringToken() {
 	for sc.peek() != '"' && !sc.isAtEnd() {
 		if sc.peek() == '\n' {
 			sc.line++
@@ -167,15 +156,14 @@ func (sc *Scanner) addStringToken() error {
 		sc.advance()
 	}
 	if sc.isAtEnd() {
-		return &Error{sc.line, "Unterminated string."}
+		sc.errorCallback(sc.line, "Unterminated string.")
+		return
 	}
 	// The closing " .
 	sc.advance()
 
 	value := sc.source[sc.start+1 : sc.current-1] //
 	sc.addTokenLiteral(STRING, value)
-
-	return nil
 }
 
 // Return current character and move one character forward
@@ -229,11 +217,4 @@ func isDigit(char byte) bool {
 	return char >= '0' && char <= '9'
 }
 
-type Error struct {
-	line    int
-	message string
-}
-
-func (e *Error) Error() string {
-	return formatter.ReportError(e.line, "", e.message)
-}
+type ErrorCallback func(line int, message string)

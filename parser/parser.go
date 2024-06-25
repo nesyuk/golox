@@ -2,8 +2,6 @@ package parser
 
 import (
 	"errors"
-	"fmt"
-	"github.com/nesyuk/golox/formatter"
 	"github.com/nesyuk/golox/scanner"
 	"github.com/nesyuk/golox/token"
 )
@@ -19,24 +17,25 @@ import (
 */
 
 type Parser struct {
-	tokens  []scanner.Token
-	current int
-	errors  []error
+	tokens        []scanner.Token
+	current       int
+	errorCallback ErrorCallback
 }
 
-func NewParser(tokens []scanner.Token) *Parser {
-	return &Parser{tokens: tokens, current: 0}
+func NewParser(tokens []scanner.Token, onError ErrorCallback) *Parser {
+	return &Parser{tokens: tokens, current: 0, errorCallback: onError}
 }
 
 func (p *Parser) Parse() (token.Expr, error) {
 	expr, err := p.expression()
+	var parseErr *ParseError
 	if err != nil {
-		return nil, err
+		if !errors.As(err, &parseErr) {
+			return nil, err
+		}
+		return nil, nil
 	}
-	if len(p.errors) == 0 {
-		return expr, nil
-	}
-	return expr, errors.Join(p.errors...)
+	return expr, nil
 }
 
 func (p *Parser) expression() (token.Expr, error) {
@@ -135,16 +134,13 @@ func (p *Parser) primary() (token.Expr, error) {
 	case p.match(scanner.LEFT_BRACE):
 		expr, err := p.expression()
 		if err != nil {
+			// TODO: ?
 		}
-		if _, err = p.consume(scanner.RIGHT_BRACE, "Expect ')' after expression."); err != nil {
-			// TODO: handle error
-			p.errors = append(p.errors, err)
-			return nil, err
-		}
-		return &token.Grouping{Expression: expr}, nil
+		_, err = p.consume(scanner.RIGHT_BRACE, "expect ')' after expression.")
+		return &token.Grouping{Expression: expr}, err
 
 	}
-	return nil, errors.New("expect expression")
+	return nil, p.error(p.peek(), "expect expression")
 }
 
 func (p *Parser) match(tokens ...scanner.TokenType) bool {
@@ -157,12 +153,32 @@ func (p *Parser) match(tokens ...scanner.TokenType) bool {
 	return false
 }
 
-func (p *Parser) consume(tt scanner.TokenType, msg string) (*scanner.Token, error) {
+func (p *Parser) consume(tt scanner.TokenType, message string) (*scanner.Token, error) {
 	if p.check(tt) {
 		t := p.advance()
 		return &t, nil
 	}
-	return nil, &Error{Token: p.peek(), Message: msg}
+	return nil, p.error(p.peek(), message)
+}
+
+func (p *Parser) error(t scanner.Token, message string) error {
+	p.errorCallback(t, message)
+	return &ParseError{Message: message}
+}
+
+func (p *Parser) sync() {
+	p.advance()
+
+	for !p.isAtEnd() {
+		if p.previous().TokenType == scanner.SEMICOLON {
+			return
+		}
+		switch p.peek().TokenType {
+		case scanner.CLASS, scanner.FUN, scanner.VAR, scanner.FOR, scanner.IF, scanner.WHILE, scanner.PRINT, scanner.RETURN:
+			return
+		}
+		p.advance()
+	}
 }
 
 func (p *Parser) check(t scanner.TokenType) bool {
@@ -191,15 +207,12 @@ func (p *Parser) previous() scanner.Token {
 	return p.tokens[p.current-1]
 }
 
-type Error struct {
-	Token   scanner.Token
+type ParseError struct {
 	Message string
 }
 
-func (e *Error) Error() string {
-	if e.Token.TokenType == scanner.EOF {
-		return formatter.ReportError(e.Token.Line, " at end", e.Message)
-	} else {
-		return formatter.ReportError(e.Token.Line, fmt.Sprintf(" at '%v'", e.Token.Lexeme), e.Message)
-	}
+func (e *ParseError) Error() string {
+	return e.Message
 }
+
+type ErrorCallback = func(scanner.Token, string)
