@@ -20,7 +20,7 @@ func newLox() *golox {
 	return &golox{&interpreter.Interpreter{}, false, false}
 }
 
-func (l *golox) run(source string) (string, error) {
+func (l *golox) run(source string) error {
 	if l.hadError {
 		os.Exit(65)
 	}
@@ -31,17 +31,17 @@ func (l *golox) run(source string) (string, error) {
 	tokens := sc.ScanTokens()
 
 	p := parser.NewParser(tokens, l.parseError)
-	ast, err := p.Parse()
+	statements, err := p.Parse()
 	if err != nil || l.hadError {
-		return "", err
+		return err
 	}
 
 	i := interpreter.New(l.runtimeError)
-	result, err := i.Interpret(ast)
+	err = i.Interpret(statements)
 	if err != nil {
-		return "", err
+		return err
 	}
-	return result, nil
+	return nil
 }
 
 func (l *golox) runtimeError(err *interpreter.RuntimeError) {
@@ -76,11 +76,9 @@ func RunFile(f string) error {
 		return err
 	}
 	lox := newLox()
-	result, err := lox.run(string(s))
-	if err != nil {
+	if err = lox.run(string(s)); err != nil {
 		os.Exit(65)
 	}
-	fmt.Println(result)
 	return nil
 }
 
@@ -93,12 +91,10 @@ func RunPrompt() {
 		if err == io.EOF {
 			return
 		}
-		result, err := lox.run(s)
+		err = lox.run(s)
 		if err != nil {
 			fmt.Printf("failed to interpret: %v\n", err)
 			lox.ResetError()
-		} else {
-			fmt.Println(result)
 		}
 	}
 }

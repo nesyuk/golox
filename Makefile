@@ -9,4 +9,4 @@ test:
 	go test ./...
 
 gen_tokens:
-	go run token/main.go token
+	go run token/gen/main.go token

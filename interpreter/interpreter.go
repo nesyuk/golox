@@ -10,23 +10,27 @@ import (
 
 type Interpreter struct {
 	errorCallback ErrorCallback
+	env           *Environment
 }
 
 func New(onError ErrorCallback) *Interpreter {
-	return &Interpreter{onError}
+	return &Interpreter{onError, NewEnvironment()}
 }
 
-func (i *Interpreter) Interpret(expression token.Expr) (string, error) {
-	result, err := i.eval(expression)
-	var intErr *RuntimeError
-	if err != nil {
-		if !errors.As(err, &intErr) {
-			return "", err
+func (i *Interpreter) Interpret(statements []token.Stmt) error {
+	for _, stmt := range statements {
+		_, err := i.exec(stmt)
+
+		var intErr *RuntimeError
+		if err != nil {
+			if !errors.As(err, &intErr) {
+				return err
+			}
+			i.errorCallback(err.(*RuntimeError))
+			return nil
 		}
-		i.errorCallback(err.(*RuntimeError))
-		return "", nil
 	}
-	return stringify(result), nil
+	return nil
 }
 
 func stringify(value interface{}) string {
@@ -44,6 +48,51 @@ func (i *Interpreter) eval(expr token.Expr) (interface{}, error) {
 	return expr.Accept(i)
 }
 
+func (i *Interpreter) exec(stmt token.Stmt) (interface{}, error) {
+	return stmt.Accept(i)
+}
+
+func (i *Interpreter) VisitAssign(expr *token.Assign) (interface{}, error) {
+	value, err := i.eval(expr.Value)
+	if err != nil {
+		return nil, err
+	}
+	if err := i.env.Assign(&expr.Name, value); err != nil {
+		return nil, err
+	}
+	return value, nil
+}
+
+func (i *Interpreter) VisitExpression(stmt *token.Expression) (interface{}, error) {
+	_, err := i.eval(stmt.Expression)
+	if err != nil {
+		return nil, err
+	}
+	return nil, err
+}
+
+func (i *Interpreter) VisitPrint(stmt *token.Print) (interface{}, error) {
+	result, err := i.eval(stmt.Expression)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Println(stringify(result))
+	return nil, nil
+}
+
+func (i *Interpreter) VisitVar(stmt *token.Var) (interface{}, error) {
+	var value interface{}
+	if stmt.Initializer != nil {
+		var err error
+		value, err = i.eval(stmt.Initializer)
+		if err != nil {
+			return nil, err
+		}
+	}
+	i.env.Define(*stmt.Name.Lexeme, value)
+	return nil, nil
+}
+
 func (i *Interpreter) VisitLiteral(expr *token.Literal) (interface{}, error) {
 	return expr.Value, nil
 }
@@ -53,11 +102,11 @@ func (i *Interpreter) VisitUnary(expr *token.Unary) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	switch expr.Operation.TokenType {
+	switch expr.Operator.TokenType {
 	case scanner.BANG:
 		return !i.isTruthy(right), nil
 	case scanner.MINUS:
-		if err = checkNumberOperand(expr.Operation, right); err != nil {
+		if err = checkNumberOperand(expr.Operator, right); err != nil {
 			return nil, err
 		}
 		return -1 * right.(float64), nil
@@ -76,19 +125,19 @@ func (i *Interpreter) VisitBinary(expr *token.Binary) (interface{}, error) {
 		return nil, err
 	}
 
-	switch expr.Operation.TokenType {
+	switch expr.Operator.TokenType {
 	case scanner.MINUS:
-		if err := checkNumberOperands(expr.Operation, left, right); err != nil {
+		if err := checkNumberOperands(expr.Operator, left, right); err != nil {
 			return nil, err
 		}
 		return left.(float64) - right.(float64), nil
 	case scanner.SLASH:
-		if err := checkNumberOperands(expr.Operation, left, right); err != nil {
+		if err := checkNumberOperands(expr.Operator, left, right); err != nil {
 			return nil, err
 		}
 		return left.(float64) / right.(float64), nil
 	case scanner.STAR:
-		if err := checkNumberOperands(expr.Operation, left, right); err != nil {
+		if err := checkNumberOperands(expr.Operator, left, right); err != nil {
 			return nil, err
 		}
 		return left.(float64) * right.(float64), nil
@@ -99,35 +148,35 @@ func (i *Interpreter) VisitBinary(expr *token.Binary) (interface{}, error) {
 			if ok {
 				return l + r, nil
 			} else {
-				return nil, &RuntimeError{Token: &expr.Operation, Message: "Operands must be numbers."}
+				return nil, &RuntimeError{Token: &expr.Operator, Message: "Operands must be numbers."}
 			}
 		case string:
 			r, ok := right.(string)
 			if ok {
 				return l + r, nil
 			} else {
-				return nil, &RuntimeError{Token: &expr.Operation, Message: "Operands must be strings."}
+				return nil, &RuntimeError{Token: &expr.Operator, Message: "Operands must be strings."}
 			}
 		default:
-			return nil, &RuntimeError{Token: &expr.Operation, Message: "Operands must be two numbers or two strings."}
+			return nil, &RuntimeError{Token: &expr.Operator, Message: "Operands must be two numbers or two strings."}
 		}
 	case scanner.GREATER:
-		if err := checkNumberOperands(expr.Operation, left, right); err != nil {
+		if err := checkNumberOperands(expr.Operator, left, right); err != nil {
 			return nil, err
 		}
 		return left.(float64) > right.(float64), nil
 	case scanner.GREATER_EQUAL:
-		if err := checkNumberOperands(expr.Operation, left, right); err != nil {
+		if err := checkNumberOperands(expr.Operator, left, right); err != nil {
 			return nil, err
 		}
 		return left.(float64) >= right.(float64), nil
 	case scanner.LESS:
-		if err := checkNumberOperands(expr.Operation, left, right); err != nil {
+		if err := checkNumberOperands(expr.Operator, left, right); err != nil {
 			return nil, err
 		}
 		return left.(float64) < right.(float64), nil
 	case scanner.LESS_EQUAL:
-		if err := checkNumberOperands(expr.Operation, left, right); err != nil {
+		if err := checkNumberOperands(expr.Operator, left, right); err != nil {
 			return nil, err
 		}
 		return left.(float64) <= right.(float64), nil
@@ -142,6 +191,10 @@ func (i *Interpreter) VisitBinary(expr *token.Binary) (interface{}, error) {
 
 func (i *Interpreter) VisitGrouping(expr *token.Grouping) (interface{}, error) {
 	return i.eval(expr.Expression)
+}
+
+func (i *Interpreter) VisitVariable(variable *token.Variable) (interface{}, error) {
+	return i.env.Get(&variable.Name)
 }
 
 func (i *Interpreter) isTruthy(value interface{}) bool {

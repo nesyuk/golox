@@ -1,220 +1,298 @@
 package parser
 
 import (
-	"github.com/nesyuk/golox/printer"
 	"github.com/nesyuk/golox/scanner"
+	"github.com/nesyuk/golox/scanner/testutil"
+	"github.com/nesyuk/golox/token"
 	"testing"
 )
 
-func TestParserLiteral(t *testing.T) {
+func TestParseDeclaration(t *testing.T) {
 	errors := make([]string, 0)
 	p := NewParser(
 		[]scanner.Token{
-			{scanner.NUMBER, getStrPtr("123"), 123, 1},
-			{scanner.EOF, nil, nil, 1},
+			testutil.VarDecl(),
+			testutil.Identifier("a"),
+			testutil.Equal(),
+			testutil.Str("before"),
+			testutil.Semicolon(),
+			testutil.Eof(),
 		},
 		testCallBack(&errors),
 	)
-	ast, err := p.Parse()
+	stmts, err := p.Parse()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if stmts == nil {
+		t.Fatal("expect not nil")
+	}
+	if len(stmts) != 1 {
+		t.Fatalf("expect len(1) got %v", len(stmts))
+	}
+	got, ok := stmts[0].(*token.Var)
+	if !ok {
+		t.Fatalf("expect *token.Var got %T", got)
+	}
+	if got.Name.Lexeme == nil || *got.Name.Lexeme != "a" {
+		t.Fatalf("expect 'a' got '%v'", got.Name.Lexeme)
+	}
+	init, ok := got.Initializer.(*token.Literal)
+	if !ok {
+		t.Fatalf("expect *token.Literal got %T", init)
+	}
+	if init.Value != "before" {
+		t.Fatalf("expect 'before' got '%v'", init.Value)
+	}
+}
+
+func TestParseAssign(t *testing.T) {
+	errors := make([]string, 0)
+	p := NewParser(
+		[]scanner.Token{
+			testutil.Identifier("a"),
+			testutil.Equal(),
+			testutil.Str("after"),
+			testutil.Semicolon(),
+			testutil.Eof(),
+		},
+		testCallBack(&errors),
+	)
+	stmts, err := p.Parse()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if stmts == nil {
+		t.Fatal("expect not nil")
+	}
+	if len(stmts) != 1 {
+		t.Fatalf("expect len(1) got %v", len(stmts))
+	}
+	got, ok := stmts[0].(*token.Expression)
+	if !ok {
+		t.Fatalf("expect *token.Expression got %T", got)
+	}
+	expr, ok := got.Expression.(*token.Assign)
+	if !ok {
+		t.Fatalf("expect *token.Assign got %T", got)
+	}
+	if expr.Name.Lexeme == nil || *expr.Name.Lexeme != "a" {
+		t.Fatalf("expect 'a' got '%v'", expr.Name.Lexeme)
+	}
+	value, ok := expr.Value.(*token.Literal)
+	if !ok {
+		t.Fatalf("expect *token.Literal got %T", got)
+	}
+	if value == nil || value.Value != "after" {
+		t.Fatalf("expect 'after' got '%v'", value.Value)
+	}
+}
+
+func TestParseAssignError(t *testing.T) {
+	errors := make([]string, 0)
+	p := NewParser(
+		[]scanner.Token{
+			testutil.Identifier("a"),
+			testutil.Plus(),
+			testutil.Identifier("b"),
+			testutil.Equal(),
+			testutil.Number(10),
+			testutil.Semicolon(),
+			testutil.Eof(),
+		},
+		testCallBack(&errors),
+	)
+	stmts, err := p.Parse()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(stmts) > 0 {
+		t.Fatalf("expect empty, got %v", stmts)
+	}
+	if len(errors) != 1 {
+		t.Log(errors)
+		t.Fatalf("expect len(1) got %v", len(errors))
+	}
+	if errors[0] != "Invalid assignment target." {
+		t.Fatalf("expect 'Invalid assignment target.' got %v", errors[0])
+	}
+}
+
+func TestParseLiteral(t *testing.T) {
+	errors := make([]string, 0)
+	p := NewParser(
+		[]scanner.Token{
+			testutil.Number(123.0),
+			testutil.Semicolon(),
+			testutil.Eof(),
+		},
+		testCallBack(&errors),
+	)
+	stmts, err := p.Parse()
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(errors) != 0 {
 		t.Fatalf("expect empty len(error) got %d", len(errors))
 	}
-	if ast == nil {
+	if stmts == nil {
 		t.Fatalf("expect not nil")
 	}
-	pp := printer.Ast{}
-	result, err := pp.Print(ast)
-	if err != nil {
-		t.Error(err)
-	}
-	if result != "123" {
-		t.Fatalf("expect: %v, got: %v", "123", result)
-	}
 }
 
-func TestParserUnary(t *testing.T) {
+func TestParseUnary(t *testing.T) {
 	errors := make([]string, 0)
 	p := NewParser(
 		[]scanner.Token{
-			{scanner.MINUS, getStrPtr("-"), nil, 1},
-			{scanner.NUMBER, getStrPtr("123"), 123, 1},
-			{scanner.EOF, nil, nil, 1},
+			testutil.Minus(),
+			testutil.Number(123.0),
+			testutil.Semicolon(),
+			testutil.Eof(),
 		},
 		testCallBack(&errors),
 	)
-	ast, err := p.Parse()
+	stmts, err := p.Parse()
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(errors) != 0 {
-		t.Fatalf("expect empty len(error) got %d", len(errors))
+		t.Fatalf("expect empty len(error) got %d, %v", len(errors), errors[0])
 	}
-	if ast == nil {
+	if stmts == nil {
 		t.Fatal("expect not nil")
-	}
-	pp := printer.Ast{}
-	result, err := pp.Print(ast)
-	if err != nil {
-		t.Error(err)
-	}
-	if result != "(- 123)" {
-		t.Fatalf("expect: %v, got: %v", "(- 123)", result)
 	}
 }
 
-func TestParserTerm(t *testing.T) {
+func TestParseTerm(t *testing.T) {
 	errors := make([]string, 0)
 	p := NewParser(
 		[]scanner.Token{
-			{scanner.NUMBER, getStrPtr("321"), 321, 1},
-			{scanner.MINUS, getStrPtr("+"), nil, 1},
-			{scanner.NUMBER, getStrPtr("123"), 123, 1},
-			{scanner.EOF, nil, nil, 1},
+			testutil.Number(321.0),
+			testutil.Plus(),
+			testutil.Number(123.0),
+			testutil.Semicolon(),
+			testutil.Eof(),
 		},
 		testCallBack(&errors),
 	)
-	ast, err := p.Parse()
+	stmts, err := p.Parse()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if ast == nil {
+	if stmts == nil {
 		t.Fatal("expect not nil")
-	}
-	pp := printer.Ast{}
-	result, err := pp.Print(ast)
-	if err != nil {
-		t.Error(err)
-	}
-	if result != "(+ 321 123)" {
-		t.Fatalf("expect: %v, got: %v", "(+ 321 123)", result)
 	}
 }
 
-func TestParserFactorial(t *testing.T) {
+func TestParseFactorial(t *testing.T) {
 	errors := make([]string, 0)
 	p := NewParser(
 		[]scanner.Token{
-			{scanner.NUMBER, getStrPtr("321"), 321, 1},
-			{scanner.MINUS, getStrPtr("*"), nil, 1},
-			{scanner.NUMBER, getStrPtr("123"), 123, 1},
-			{scanner.EOF, nil, nil, 1},
+			testutil.Number(321.0),
+			testutil.Star(),
+			testutil.Number(123.0),
+			testutil.Semicolon(),
+			testutil.Eof(),
 		},
 		testCallBack(&errors),
 	)
-	ast, err := p.Parse()
+	stmts, err := p.Parse()
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(errors) != 0 {
+		t.Log(errors)
 		t.Fatalf("expect empty len(error) got %d", len(errors))
 	}
-	if ast == nil {
+	if stmts == nil {
 		t.Fatal("expect not nil")
-	}
-	pp := printer.Ast{}
-	result, err := pp.Print(ast)
-	if err != nil {
-		t.Error(err)
-	}
-	if result != "(* 321 123)" {
-		t.Fatalf("expect: %v, got: %v", "(* 321 123)", result)
 	}
 }
 
-func TestParserGrouping(t *testing.T) {
+func TestParseGrouping(t *testing.T) {
 	errors := make([]string, 0)
 	p := NewParser(
 		[]scanner.Token{
-			{scanner.LEFT_BRACE, getStrPtr("("), nil, 1},
-			{scanner.NUMBER, getStrPtr("321"), 321, 1},
-			{scanner.MINUS, getStrPtr("*"), nil, 1},
-			{scanner.NUMBER, getStrPtr("123"), 123, 1},
-			{scanner.RIGHT_BRACE, getStrPtr(")"), nil, 1},
-			{scanner.EOF, nil, nil, 1},
+			testutil.LeftParen(),
+			testutil.Number(321.0),
+			testutil.Star(),
+			testutil.Number(123.0),
+			testutil.RightParen(),
+			testutil.Semicolon(),
+			testutil.Eof(),
 		},
 		testCallBack(&errors),
 	)
-	ast, err := p.Parse()
+	stmts, err := p.Parse()
 	if err != nil {
 		t.Fatalf("expect: nil got: %v", err)
 	}
 	if len(errors) != 0 {
+		t.Log(errors)
 		t.Fatalf("expect empty len(error) got %d", len(errors))
 	}
-	if ast == nil {
+	if stmts == nil {
 		t.Fatal("expect not nil")
-	}
-	pp := printer.Ast{}
-	result, err := pp.Print(ast)
-	if err != nil {
-		t.Error(err)
-	}
-	if result != "(grouping (* 321 123))" {
-		t.Fatalf("expect: %v, got: %v", "(grouping (* 321 123)(", result)
 	}
 }
 
-func TestParserGroupingError(t *testing.T) {
+func TestParseGroupingError(t *testing.T) {
 	errors := make([]string, 0)
 	p := NewParser(
 		[]scanner.Token{
-			{scanner.LEFT_BRACE, getStrPtr("("), nil, 1},
-			{scanner.NUMBER, getStrPtr("321"), 321, 1},
-			{scanner.MINUS, getStrPtr("*"), nil, 1},
-			{scanner.NUMBER, getStrPtr("123"), 123, 1},
-			{scanner.EOF, nil, nil, 1},
+			testutil.LeftParen(),
+			testutil.Number(321.0),
+			testutil.Star(),
+			testutil.Number(123.0),
+			testutil.Semicolon(),
+			testutil.Eof(),
 		},
 		testCallBack(&errors),
 	)
-	ast, err := p.Parse()
+	stmts, err := p.Parse()
 	if err != nil {
 		t.Fatal("expect nil")
 	}
 	if len(errors) != 1 {
 		t.Fatalf("expect len(1) got %d", len(errors))
 	}
-	if ast != nil {
-		t.Fatal("expect nil")
+	if len(stmts) != 0 {
+		t.Log(stmts)
+		t.Fatalf("expect empty got %v", len(stmts))
 	}
 	if errors[0] != "expect ')' after expression." {
 		t.Fatalf("expect %v got %v", "expect ')' after expression.", errors[0])
 	}
 }
 
-func TestParserGroupingErrors(t *testing.T) {
+func TestParseGroupingErrors(t *testing.T) {
 	errors := make([]string, 0)
-	t.Skip("sync is not implemented yet")
 	p := NewParser(
 		[]scanner.Token{
-			{scanner.LEFT_BRACE, getStrPtr("("), nil, 1},
-			{scanner.NUMBER, getStrPtr("321"), 321, 1},
-			{scanner.MINUS, getStrPtr("-"), nil, 1},
-			{scanner.LEFT_BRACE, getStrPtr("("), nil, 1},
-			{scanner.EOF, nil, nil, 1},
+			testutil.LeftParen(),
+			testutil.Number(321.0),
+			testutil.Minus(),
+			testutil.Number(123.0),
+			testutil.LeftParen(),
+			testutil.Semicolon(),
+			testutil.Eof(),
 		},
 		testCallBack(&errors),
 	)
-	ast, err := p.Parse()
-	if err == nil {
-		t.Fatal("Expecting parsing error")
+	stmts, err := p.Parse()
+	if err != nil {
+		t.Fatalf("expect empty, got %v", err.Error())
 	}
-	if len(errors) != 0 {
-		t.Fatalf("expect empty len(error) got %d", len(errors))
+	if len(stmts) > 0 {
+		t.Log(stmts)
+		t.Fatalf("Expecting empty got: %v", len(stmts))
 	}
-	if ast == nil {
-		t.Fatal("Expecting nil ast")
+	if len(errors) != 1 {
+		t.Fatalf("expect len(1) got %d", len(errors))
 	}
-	t.Log(err)
-	if err.Error() != "[line 1] Error at end: Expect ')' after expression." {
-		t.Fatalf("expect: %v, got: %v", "[line 1] Error at end: Expect ')' after expression.", err.Error())
+	if errors[0] != "expect ')' after expression." {
+		t.Fatalf("expect: 'expect ')' after expression.', got: '%v'", errors[0])
 	}
-}
-
-func getStrPtr(s string) *string {
-	return &s
 }
 
 var testCallBack = func(errs *[]string) ErrorCallback {

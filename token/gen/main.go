@@ -21,14 +21,22 @@ func (e *GeneratorError) wrap(err error) *GeneratorError {
 	return e
 }
 
-var productions = []string{
+var expressions = []string{
+	"Assign: Name scanner.Token, Value Expr",
 	"Literal: Value interface{}",
-	"Unary: Operation scanner.Token, Right Expr",
-	"Binary: Left Expr, Operation scanner.Token, Right Expr",
+	"Unary: Operator scanner.Token, Right Expr",
+	"Variable: Name scanner.Token",
+	"Binary: Left Expr, Operator scanner.Token, Right Expr",
 	"Grouping: Expression Expr",
 }
 
-func generate(filename string) error {
+var statements = []string{
+	"Expression: Expression Expr",
+	"Print: Expression Expr",
+	"Var: Name scanner.Token, Initializer Expr",
+}
+
+func generateAst(filename string) error {
 	cwd, err := os.Getwd()
 	fmt.Println(cwd)
 	if err != nil {
@@ -46,15 +54,17 @@ func generate(filename string) error {
 	f.WriteString("package token\n\n")
 	declareImports(f, "github.com/nesyuk/golox/scanner")
 
-	f.WriteString("type Expr interface {\n\tAccept(visitor Visitor) interface{}\n}\n\n")
+	defineExpressions(f, expressions, "Expr")
+	defineExpressions(f, statements, "Stmt")
 
-	declareVisitorInterface(f)
-
-	declareExpressions(f)
 	return nil
 }
 
-func declareExpressions(f *os.File) {
+func defineExpressions(f *os.File, productions []string, name string) {
+	f.WriteString(fmt.Sprintf("type %v interface {\n\tAccept(visitor Visitor%v) (interface{}, error)\n}\n\n", name, name))
+
+	declareVisitorInterface(f, productions, name)
+
 	for _, prod := range productions {
 		prodArr := strings.Split(prod, ":")
 		head := prodArr[0]
@@ -65,24 +75,16 @@ func declareExpressions(f *os.File) {
 			f.WriteString(fmt.Sprintf("\n\t%v", part))
 		}
 		f.WriteString("\n}\n\n")
-		f.WriteString(fmt.Sprintf("func (e *%v) Accept(visitor Visitor) interface{} {\n\treturn visitor.Visit%v(e)\n}\n\n", head, head))
+		f.WriteString(fmt.Sprintf("func (e *%v) Accept(visitor Visitor%v) (interface{}, error) {\n\treturn visitor.Visit%v(e)\n}\n\n", head, name, head))
 	}
-	/*
-		type Literal struct {
-			Value interface{}
-		}
-
-		func (e *Literal) Accept(visitor Visitor) interface{} {
-		return visitor.VisitLiteral(e)
-		}*/
 }
 
-func declareVisitorInterface(f *os.File) {
-	f.WriteString("type Visitor interface {\n")
+func declareVisitorInterface(f *os.File, productions []string, name string) {
+	f.WriteString(fmt.Sprintf("type Visitor%v interface {\n", name))
 	for _, prod := range productions {
 		prodArr := strings.Split(prod, ":")
 		head := prodArr[0]
-		f.WriteString(fmt.Sprintf("\tVisit%v(expr *%v) interface{}\n", head, head))
+		f.WriteString(fmt.Sprintf("\tVisit%v(%v *%v) (interface{}, error)\n", head, strings.ToLower(name), head))
 	}
 	f.WriteString("}\n\n")
 }
@@ -100,7 +102,7 @@ func main() {
 		fmt.Println("usage: tokengen [filename]")
 		os.Exit(64)
 	}
-	if err := generate(os.Args[1]); err != nil {
+	if err := generateAst(os.Args[1]); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}

@@ -1,6 +1,8 @@
 package scanner
 
-import "fmt"
+import (
+	"fmt"
+)
 
 //go:generate go run golang.org/x/tools/cmd/stringer -type TokenType
 
