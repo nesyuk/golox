@@ -33,6 +33,7 @@ var expressions = []string{
 var statements = []string{
 	"BlockStmt: Statements []Stmt",
 	"ExpressionStmt: Expression Expr",
+	"IfStmt: Condition Expr, ThenBranch Stmt, ElseBranch Stmt",
 	"PrintStmt: Expression Expr",
 	"VarStmt: Name scanner.Token, Initializer Expr",
 }

@@ -96,6 +96,21 @@ func (i *Interpreter) VisitPrintStmt(stmt *token.PrintStmt) (interface{}, error)
 	return nil, nil
 }
 
+func (i *Interpreter) VisitIfStmt(stmt *token.IfStmt) (interface{}, error) {
+	isTruthy, err := i.eval(stmt.Condition)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Printf("%T\n", isTruthy)
+	if true {
+		return i.exec(stmt.ThenBranch)
+	}
+	if stmt.ElseBranch != nil {
+		return i.exec(stmt.ElseBranch)
+	}
+	return nil, nil
+}
+
 func (i *Interpreter) VisitVarStmt(stmt *token.VarStmt) (interface{}, error) {
 	var value interface{}
 	if stmt.Initializer != nil {

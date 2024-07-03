@@ -12,6 +12,7 @@ import (
     varDecl -> "var" IDENTIFIER ("=" expression)? ";"
     statement -> exprStmt | printStmt | block
     exprStmt -> expression ";"
+	ifStmt ->  "if" "(" expression ")" statement ( "else" statement )?
     printStmt -> "print" expression
     block -> "{" declaration* "}"
 	expression -> assignment
@@ -86,6 +87,8 @@ func (p *Parser) variableDeclaration() (token.Stmt, error) {
 
 func (p *Parser) statement() (token.Stmt, error) {
 	switch {
+	case p.match(scanner.IF):
+		return p.ifStatement()
 	case p.match(scanner.PRINT):
 		return p.printStmt()
 	case p.match(scanner.LEFT_BRACE):
@@ -96,6 +99,44 @@ func (p *Parser) statement() (token.Stmt, error) {
 		return &token.BlockStmt{Statements: stmts}, nil
 	}
 	return p.expressionStmt()
+}
+
+func (p *Parser) ifStatement() (token.Stmt, error) {
+	_, err := p.consume(scanner.LEFT_PAREN, "expect '(' after 'if'.")
+	if err != nil {
+		return nil, err
+	}
+	cond, err := p.expression()
+	if err != nil {
+		return nil, err
+	}
+	_, err = p.consume(scanner.RIGHT_PAREN, "expect ')' after if condition")
+	if err != nil {
+		return nil, err
+	}
+	thenBranch, err := p.statement()
+	if err != nil {
+		return nil, err
+	}
+	var elseBranch token.Stmt
+	if p.match(scanner.ELSE) {
+		elseBranch, err = p.statement()
+		if err != nil {
+			return nil, err
+		}
+	}
+	return &token.IfStmt{Condition: cond, ThenBranch: thenBranch, ElseBranch: elseBranch}, nil
+}
+
+func (p *Parser) printStmt() (token.Stmt, error) {
+	expr, err := p.expression()
+	if err != nil {
+		return nil, err
+	}
+	if _, err = p.consume(scanner.SEMICOLON, "expect ';' after value."); err != nil {
+		return nil, err
+	}
+	return &token.PrintStmt{Expression: expr}, err
 }
 
 func (p *Parser) block() ([]token.Stmt, error) {
@@ -111,17 +152,6 @@ func (p *Parser) block() ([]token.Stmt, error) {
 		return nil, err
 	}
 	return stmts, nil
-}
-
-func (p *Parser) printStmt() (token.Stmt, error) {
-	expr, err := p.expression()
-	if err != nil {
-		return nil, err
-	}
-	if _, err = p.consume(scanner.SEMICOLON, "expect ';' after value."); err != nil {
-		return nil, err
-	}
-	return &token.PrintStmt{Expression: expr}, err
 }
 
 func (p *Parser) expressionStmt() (token.Stmt, error) {

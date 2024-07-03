@@ -309,6 +309,23 @@ func TestInterpretAssign(t *testing.T) {
 	assertToken(t, i, &tok, "after")
 }
 
+func TestIfStatement(t *testing.T) {
+	errs := make([]string, 0)
+	i := New(testCallBack(&errs))
+	ifStmt := &token.IfStmt{
+		Condition:  &token.LiteralExpr{Value: 1.0},
+		ThenBranch: &token.PrintStmt{Expression: &token.LiteralExpr{Value: "is true"}},
+		ElseBranch: &token.PrintStmt{Expression: &token.LiteralExpr{Value: "is false"}},
+	}
+	got, err := i.exec(ifStmt)
+	if got != nil {
+		t.Fatalf("expect nil")
+	}
+	if err != nil {
+		t.Fatalf("expect nil got %v", err)
+	}
+}
+
 func TestBlock(t *testing.T) {
 	errs := make([]string, 0)
 	i := New(testCallBack(&errs))

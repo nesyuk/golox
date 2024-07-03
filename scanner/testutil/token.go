@@ -5,6 +5,21 @@ import (
 	"github.com/nesyuk/golox/scanner"
 )
 
+func IfIdentifier() scanner.Token {
+	lexeme := "if"
+	return scanner.Token{TokenType: scanner.IF, Lexeme: &lexeme, Line: 1}
+}
+
+func ElseIdentifier() scanner.Token {
+	lexeme := "else"
+	return scanner.Token{TokenType: scanner.ELSE, Lexeme: &lexeme, Line: 1}
+}
+
+func PrintIdentifier() scanner.Token {
+	lexeme := "print"
+	return scanner.Token{TokenType: scanner.PRINT, Lexeme: &lexeme, Line: 1}
+}
+
 func VarDecl() scanner.Token {
 	lexeme := "var"
 	return scanner.Token{TokenType: scanner.VAR, Lexeme: &lexeme, Line: 1}

@@ -295,6 +295,55 @@ func TestParseGroupingErrors(t *testing.T) {
 	}
 }
 
+func TestParseIfStatement(t *testing.T) {
+	errors := make([]string, 0)
+	p := NewParser(
+		[]scanner.Token{
+			testutil.IfIdentifier(),
+			testutil.LeftParen(),
+			testutil.Number(1.0), // any non-nil value is truthy
+			testutil.RightParen(),
+			testutil.PrintIdentifier(),
+			testutil.Str("is true"),
+			testutil.Semicolon(),
+			testutil.ElseIdentifier(),
+			testutil.Str("is false"),
+			testutil.Semicolon(),
+			testutil.Eof(),
+		},
+		testCallBack(&errors),
+	)
+	stmts, err := p.Parse()
+	validateNoError(t, stmts, errors, err)
+
+	got, ok := stmts[0].(*token.IfStmt)
+	if !ok {
+		t.Fatalf("expect *token.IfStmt got %T", got)
+	}
+}
+
+func TestParseIfStatementError(t *testing.T) {
+	errors := make([]string, 0)
+	p := NewParser(
+		[]scanner.Token{
+			testutil.IfIdentifier(),
+			testutil.LeftParen(),
+			testutil.Number(1.0), // any non-nil value is truthy
+			// missing ')'
+			testutil.PrintIdentifier(),
+			testutil.Str("is true"),
+			testutil.Semicolon(),
+			testutil.ElseIdentifier(),
+			testutil.Str("is false"),
+			testutil.Semicolon(),
+			testutil.Eof(),
+		},
+		testCallBack(&errors),
+	)
+	stmts, err := p.Parse()
+	validateHasError(t, stmts, errors, err, "expect ')' after if condition")
+}
+
 func TestParseBlock(t *testing.T) {
 	errors := make([]string, 0)
 	p := NewParser(
@@ -373,5 +422,37 @@ func TestParseBlockError(t *testing.T) {
 var testCallBack = func(errs *[]string) ErrorCallback {
 	return func(token scanner.Token, message string) {
 		*errs = append(*errs, message)
+	}
+}
+
+func validateNoError(t *testing.T, stmts []token.Stmt, errors []string, err error) {
+	if err != nil {
+		t.Fatalf("expect: nil got: %v", err)
+	}
+	if len(errors) != 0 {
+		t.Log(errors)
+		t.Fatalf("expect empty len(error) got %d", len(errors))
+	}
+	if stmts == nil {
+		t.Fatal("expect not nil")
+	}
+	if len(stmts) != 1 {
+		t.Fatalf("expect len(1) got %v", len(stmts))
+	}
+}
+
+func validateHasError(t *testing.T, stmts []token.Stmt, errors []string, err error, expectError string) {
+	if len(stmts) != 0 {
+		t.Fatalf("expect empty got %v", len(stmts))
+	}
+	if err != nil {
+		t.Fatalf("expect: nil got: %v", err)
+	}
+	if len(errors) != 1 {
+		t.Log(errors)
+		t.Fatalf("expect not empty")
+	}
+	if errors[0] != expectError {
+		t.Fatalf("expect '%v' got %v", expectError, errors[0])
 	}
 }

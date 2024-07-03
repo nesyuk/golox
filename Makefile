@@ -4,9 +4,9 @@ run:
 run_prompt:
 	go run main.go
 
+gen_tokens:
+	go run token/gen/main.go token
+
 test:
 	go generate
 	go test ./...
-
-gen_tokens:
-	go run token/gen/main.go token
