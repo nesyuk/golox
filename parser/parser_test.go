@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestParseDeclaration(t *testing.T) {
+func TestParseDeclarationStmt(t *testing.T) {
 	errors := make([]string, 0)
 	p := NewParser(
 		[]scanner.Token{
@@ -21,15 +21,7 @@ func TestParseDeclaration(t *testing.T) {
 		testCallBack(&errors),
 	)
 	stmts, err := p.Parse()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if stmts == nil {
-		t.Fatal("expect not nil")
-	}
-	if len(stmts) != 1 {
-		t.Fatalf("expect len(1) got %v", len(stmts))
-	}
+	validateNoError(t, stmts, errors, err)
 	got, ok := stmts[0].(*token.VarStmt)
 	if !ok {
 		t.Fatalf("expect *token.VarStmt got %T", got)
@@ -46,7 +38,7 @@ func TestParseDeclaration(t *testing.T) {
 	}
 }
 
-func TestParseAssign(t *testing.T) {
+func TestParseAssignExpr(t *testing.T) {
 	errors := make([]string, 0)
 	p := NewParser(
 		[]scanner.Token{
@@ -59,15 +51,7 @@ func TestParseAssign(t *testing.T) {
 		testCallBack(&errors),
 	)
 	stmts, err := p.Parse()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if stmts == nil {
-		t.Fatal("expect not nil")
-	}
-	if len(stmts) != 1 {
-		t.Fatalf("expect len(1) got %v", len(stmts))
-	}
+	validateNoError(t, stmts, errors, err)
 	got, ok := stmts[0].(*token.ExpressionStmt)
 	if !ok {
 		t.Fatalf("expect *token.Expression got %T", got)
@@ -88,7 +72,7 @@ func TestParseAssign(t *testing.T) {
 	}
 }
 
-func TestParseAssignError(t *testing.T) {
+func TestParseAssignExprError(t *testing.T) {
 	errors := make([]string, 0)
 	p := NewParser(
 		[]scanner.Token{
@@ -103,22 +87,10 @@ func TestParseAssignError(t *testing.T) {
 		testCallBack(&errors),
 	)
 	stmts, err := p.Parse()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(stmts) > 0 {
-		t.Fatalf("expect empty, got %v", stmts)
-	}
-	if len(errors) != 1 {
-		t.Log(errors)
-		t.Fatalf("expect len(1) got %v", len(errors))
-	}
-	if errors[0] != "Invalid assignment target." {
-		t.Fatalf("expect 'Invalid assignment target.' got '%v'", errors[0])
-	}
+	validateHasErrors(t, stmts, errors, err, "Invalid assignment target.")
 }
 
-func TestParseLiteral(t *testing.T) {
+func TestParseLiteralExpr(t *testing.T) {
 	errors := make([]string, 0)
 	p := NewParser(
 		[]scanner.Token{
@@ -129,18 +101,10 @@ func TestParseLiteral(t *testing.T) {
 		testCallBack(&errors),
 	)
 	stmts, err := p.Parse()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(errors) != 0 {
-		t.Fatalf("expect empty len(error) got %d", len(errors))
-	}
-	if stmts == nil {
-		t.Fatalf("expect not nil")
-	}
+	validateNoError(t, stmts, errors, err)
 }
 
-func TestParseUnary(t *testing.T) {
+func TestParseUnaryExpr(t *testing.T) {
 	errors := make([]string, 0)
 	p := NewParser(
 		[]scanner.Token{
@@ -152,18 +116,10 @@ func TestParseUnary(t *testing.T) {
 		testCallBack(&errors),
 	)
 	stmts, err := p.Parse()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(errors) != 0 {
-		t.Fatalf("expect empty len(error) got %d, %v", len(errors), errors[0])
-	}
-	if stmts == nil {
-		t.Fatal("expect not nil")
-	}
+	validateNoError(t, stmts, errors, err)
 }
 
-func TestParseTerm(t *testing.T) {
+func TestParseTermExpr(t *testing.T) {
 	errors := make([]string, 0)
 	p := NewParser(
 		[]scanner.Token{
@@ -176,15 +132,10 @@ func TestParseTerm(t *testing.T) {
 		testCallBack(&errors),
 	)
 	stmts, err := p.Parse()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if stmts == nil {
-		t.Fatal("expect not nil")
-	}
+	validateNoError(t, stmts, errors, err)
 }
 
-func TestParseFactorial(t *testing.T) {
+func TestParseFactorialExpr(t *testing.T) {
 	errors := make([]string, 0)
 	p := NewParser(
 		[]scanner.Token{
@@ -197,19 +148,10 @@ func TestParseFactorial(t *testing.T) {
 		testCallBack(&errors),
 	)
 	stmts, err := p.Parse()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(errors) != 0 {
-		t.Log(errors)
-		t.Fatalf("expect empty len(error) got %d", len(errors))
-	}
-	if stmts == nil {
-		t.Fatal("expect not nil")
-	}
+	validateNoError(t, stmts, errors, err)
 }
 
-func TestParseGrouping(t *testing.T) {
+func TestParseGroupingExpr(t *testing.T) {
 	errors := make([]string, 0)
 	p := NewParser(
 		[]scanner.Token{
@@ -224,48 +166,10 @@ func TestParseGrouping(t *testing.T) {
 		testCallBack(&errors),
 	)
 	stmts, err := p.Parse()
-	if err != nil {
-		t.Fatalf("expect: nil got: %v", err)
-	}
-	if len(errors) != 0 {
-		t.Log(errors)
-		t.Fatalf("expect empty len(error) got %d", len(errors))
-	}
-	if stmts == nil {
-		t.Fatal("expect not nil")
-	}
+	validateNoError(t, stmts, errors, err)
 }
 
-func TestParseGroupingError(t *testing.T) {
-	errors := make([]string, 0)
-	p := NewParser(
-		[]scanner.Token{
-			testutil.LeftParen(),
-			testutil.Number(321.0),
-			testutil.Star(),
-			testutil.Number(123.0),
-			testutil.Semicolon(),
-			testutil.Eof(),
-		},
-		testCallBack(&errors),
-	)
-	stmts, err := p.Parse()
-	if err != nil {
-		t.Fatal("expect nil")
-	}
-	if len(errors) != 1 {
-		t.Fatalf("expect len(1) got %d", len(errors))
-	}
-	if len(stmts) != 0 {
-		t.Log(stmts)
-		t.Fatalf("expect empty got %v", len(stmts))
-	}
-	if errors[0] != "expect ')' after expression." {
-		t.Fatalf("expect %v got %v", "expect ')' after expression.", errors[0])
-	}
-}
-
-func TestParseGroupingErrors(t *testing.T) {
+func TestParseGroupingExprError(t *testing.T) {
 	errors := make([]string, 0)
 	p := NewParser(
 		[]scanner.Token{
@@ -280,22 +184,10 @@ func TestParseGroupingErrors(t *testing.T) {
 		testCallBack(&errors),
 	)
 	stmts, err := p.Parse()
-	if err != nil {
-		t.Fatalf("expect empty, got %v", err.Error())
-	}
-	if len(stmts) > 0 {
-		t.Log(stmts)
-		t.Fatalf("Expecting empty got: %v", len(stmts))
-	}
-	if len(errors) != 1 {
-		t.Fatalf("expect len(1) got %d", len(errors))
-	}
-	if errors[0] != "expect ')' after expression." {
-		t.Fatalf("expect: 'expect ')' after expression.', got: '%v'", errors[0])
-	}
+	validateHasErrors(t, stmts, errors, err, "expect ')' after expression.")
 }
 
-func TestParseIfStatement(t *testing.T) {
+func TestParseIfStmt(t *testing.T) {
 	errors := make([]string, 0)
 	p := NewParser(
 		[]scanner.Token{
@@ -322,7 +214,7 @@ func TestParseIfStatement(t *testing.T) {
 	}
 }
 
-func TestParseIfStatementError(t *testing.T) {
+func TestParseIfStmtError(t *testing.T) {
 	errors := make([]string, 0)
 	p := NewParser(
 		[]scanner.Token{
@@ -341,10 +233,10 @@ func TestParseIfStatementError(t *testing.T) {
 		testCallBack(&errors),
 	)
 	stmts, err := p.Parse()
-	validateHasError(t, stmts, errors, err, "expect ')' after if condition")
+	validateHasErrors(t, stmts, errors, err, "expect ')' after if condition")
 }
 
-func TestParseBlock(t *testing.T) {
+func TestParseBlockStmt(t *testing.T) {
 	errors := make([]string, 0)
 	p := NewParser(
 		[]scanner.Token{
@@ -359,19 +251,7 @@ func TestParseBlock(t *testing.T) {
 		testCallBack(&errors),
 	)
 	stmts, err := p.Parse()
-	if err != nil {
-		t.Fatalf("expect: nil got: %v", err)
-	}
-	if len(errors) != 0 {
-		t.Log(errors)
-		t.Fatalf("expect empty len(error) got %d", len(errors))
-	}
-	if stmts == nil {
-		t.Fatal("expect not nil")
-	}
-	if len(stmts) != 1 {
-		t.Fatalf("expect len(1) got %v", len(stmts))
-	}
+	validateNoError(t, stmts, errors, err)
 	got, ok := stmts[0].(*token.BlockStmt)
 	if !ok {
 		t.Fatalf("expect *token.Block got %T", got)
@@ -390,7 +270,7 @@ func TestParseBlock(t *testing.T) {
 	}
 }
 
-func TestParseBlockError(t *testing.T) {
+func TestParseBlockStmtError(t *testing.T) {
 	errors := make([]string, 0)
 	p := NewParser(
 		[]scanner.Token{
@@ -404,19 +284,7 @@ func TestParseBlockError(t *testing.T) {
 		testCallBack(&errors),
 	)
 	stmts, err := p.Parse()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(stmts) > 0 {
-		t.Fatalf("expect empty, got %v", stmts)
-	}
-	if len(errors) != 1 {
-		t.Log(errors)
-		t.Fatalf("expect len(1) got '%v'", len(errors))
-	}
-	if errors[0] != "Expect '}' after block." {
-		t.Fatalf("expect 'Expect '}' after block.' got %v", errors[0])
-	}
+	validateHasErrors(t, stmts, errors, err, "Expect '}' after block.")
 }
 
 var testCallBack = func(errs *[]string) ErrorCallback {
@@ -441,7 +309,7 @@ func validateNoError(t *testing.T, stmts []token.Stmt, errors []string, err erro
 	}
 }
 
-func validateHasError(t *testing.T, stmts []token.Stmt, errors []string, err error, expectError string) {
+func validateHasErrors(t *testing.T, stmts []token.Stmt, errors []string, err error, expectErrors ...string) {
 	if len(stmts) != 0 {
 		t.Fatalf("expect empty got %v", len(stmts))
 	}
@@ -452,7 +320,12 @@ func validateHasError(t *testing.T, stmts []token.Stmt, errors []string, err err
 		t.Log(errors)
 		t.Fatalf("expect not empty")
 	}
-	if errors[0] != expectError {
-		t.Fatalf("expect '%v' got %v", expectError, errors[0])
+	if len(errors) != len(expectErrors) {
+		t.Fatalf("expect len(%d) got len(%d)", len(expectErrors), len(errors))
+	}
+	for i := range errors {
+		if errors[i] != expectErrors[i] {
+			t.Fatalf("expect '%v' got %v", expectErrors[i], errors[i])
+		}
 	}
 }

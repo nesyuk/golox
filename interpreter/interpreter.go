@@ -97,12 +97,11 @@ func (i *Interpreter) VisitPrintStmt(stmt *token.PrintStmt) (interface{}, error)
 }
 
 func (i *Interpreter) VisitIfStmt(stmt *token.IfStmt) (interface{}, error) {
-	isTruthy, err := i.eval(stmt.Condition)
+	val, err := i.eval(stmt.Condition)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("%T\n", isTruthy)
-	if true {
+	if i.isTruthy(val) {
 		return i.exec(stmt.ThenBranch)
 	}
 	if stmt.ElseBranch != nil {

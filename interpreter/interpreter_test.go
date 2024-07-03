@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestInterpretLiteralFloat(t *testing.T) {
+func TestInterpretLiteralExprFloat(t *testing.T) {
 	expr := &token.LiteralExpr{Value: 123.}
 	errs := make([]string, 0)
 	i := New(testCallBack(&errs))
@@ -23,7 +23,7 @@ func TestInterpretLiteralFloat(t *testing.T) {
 	}
 }
 
-func TestInterpretLiteralString(t *testing.T) {
+func TestInterpretLiteralExprString(t *testing.T) {
 	expr := &token.LiteralExpr{Value: "abc"}
 	errs := make([]string, 0)
 	i := New(testCallBack(&errs))
@@ -40,7 +40,7 @@ func TestInterpretLiteralString(t *testing.T) {
 	}
 }
 
-func TestInterpretLiteralBoolean(t *testing.T) {
+func TestInterpretLiteralExprBoolean(t *testing.T) {
 	expr := &token.LiteralExpr{Value: true}
 	errs := make([]string, 0)
 	i := New(testCallBack(&errs))
@@ -56,9 +56,9 @@ func TestInterpretLiteralBoolean(t *testing.T) {
 	}
 }
 
-func TestInterpretUnaryMinus(t *testing.T) {
+func TestInterpretUnaryExprMinus(t *testing.T) {
 	expr := &token.UnaryExpr{
-		Operator: scanner.Token{TokenType: scanner.MINUS},
+		Operator: testutil.Minus(),
 		Right:    &token.LiteralExpr{Value: 123.0},
 	}
 	errs := make([]string, 0)
@@ -75,9 +75,9 @@ func TestInterpretUnaryMinus(t *testing.T) {
 	}
 }
 
-func TestInterpretUnaryError(t *testing.T) {
+func TestInterpretUnaryExprError(t *testing.T) {
 	expr := &token.UnaryExpr{
-		Operator: scanner.Token{TokenType: scanner.MINUS},
+		Operator: testutil.Minus(),
 		Right:    &token.LiteralExpr{Value: "muffin"},
 	}
 	errs := make([]string, 0)
@@ -97,25 +97,25 @@ func TestInterpretUnaryError(t *testing.T) {
 	}
 }
 
-func TestInterpretUnaryBang(t *testing.T) {
+func TestInterpretUnaryExprBang(t *testing.T) {
 	tests := []struct {
 		expr   token.Expr
 		expect interface{}
 	}{
 		{&token.UnaryExpr{
-			Operator: scanner.Token{TokenType: scanner.BANG},
+			Operator: testutil.Bang(),
 			Right:    &token.LiteralExpr{Value: 123.0},
 		}, false},
 		{&token.UnaryExpr{
-			Operator: scanner.Token{TokenType: scanner.BANG},
+			Operator: testutil.Bang(),
 			Right:    &token.LiteralExpr{Value: "abc"},
 		}, false},
 		{&token.UnaryExpr{
-			Operator: scanner.Token{TokenType: scanner.BANG},
+			Operator: testutil.Bang(),
 			Right:    &token.LiteralExpr{Value: true},
 		}, false},
 		{&token.UnaryExpr{
-			Operator: scanner.Token{TokenType: scanner.BANG},
+			Operator: testutil.Bang(),
 			Right:    &token.LiteralExpr{Value: false},
 		}, true},
 	}
@@ -135,79 +135,79 @@ func TestInterpretUnaryBang(t *testing.T) {
 	}
 }
 
-func TestInterpretBinary(t *testing.T) {
+func TestInterpretBinaryExpr(t *testing.T) {
 	tests := []struct {
 		expr   token.Expr
 		expect interface{}
 	}{
 		{&token.BinaryExpr{
 			Left:     &token.LiteralExpr{Value: 40.02},
-			Operator: scanner.Token{TokenType: scanner.PLUS},
+			Operator: testutil.Plus(),
 			Right:    &token.LiteralExpr{Value: 2.40},
 		}, 42.42},
 		{&token.BinaryExpr{
 			Left:     &token.LiteralExpr{Value: "Hello, "},
-			Operator: scanner.Token{TokenType: scanner.PLUS},
+			Operator: testutil.Plus(),
 			Right:    &token.LiteralExpr{Value: "World!"},
 		}, "Hello, World!"},
 		{&token.BinaryExpr{
 			Left:     &token.LiteralExpr{Value: 16.0},
-			Operator: scanner.Token{TokenType: scanner.STAR},
+			Operator: testutil.Star(),
 			Right:    &token.LiteralExpr{Value: 2.0},
 		}, 32.0},
 		{&token.BinaryExpr{
 			Left:     &token.LiteralExpr{Value: 256.0},
-			Operator: scanner.Token{TokenType: scanner.SLASH},
+			Operator: testutil.Slash(),
 			Right:    &token.LiteralExpr{Value: 2.0},
 		}, 128.0},
 		{&token.BinaryExpr{
 			Left:     &token.LiteralExpr{Value: 2.0},
-			Operator: scanner.Token{TokenType: scanner.GREATER},
+			Operator: testutil.Greater(),
 			Right:    &token.LiteralExpr{Value: 1.0},
 		}, true},
 		{&token.BinaryExpr{
 			Left:     &token.LiteralExpr{Value: 2.4},
-			Operator: scanner.Token{TokenType: scanner.GREATER_EQUAL},
+			Operator: testutil.GreaterEqual(),
 			Right:    &token.LiteralExpr{Value: 2.4},
 		}, true},
 		{&token.BinaryExpr{
 			Left:     &token.LiteralExpr{Value: 2.0},
-			Operator: scanner.Token{TokenType: scanner.LESS},
+			Operator: testutil.Less(),
 			Right:    &token.LiteralExpr{Value: 1.0},
 		}, false},
 		{&token.BinaryExpr{
 			Left:     &token.LiteralExpr{Value: 2.4},
-			Operator: scanner.Token{TokenType: scanner.LESS_EQUAL},
+			Operator: testutil.LessEqual(),
 			Right:    &token.LiteralExpr{Value: 2.4},
 		}, true},
 		{&token.BinaryExpr{
 			Left:     &token.LiteralExpr{Value: 2.4},
-			Operator: scanner.Token{TokenType: scanner.EQUAL_EQUAL},
+			Operator: testutil.EqualEqual(),
 			Right:    &token.LiteralExpr{Value: 2.4},
 		}, true},
 		{&token.BinaryExpr{
 			Left:     &token.LiteralExpr{Value: "lox"},
-			Operator: scanner.Token{TokenType: scanner.EQUAL_EQUAL},
+			Operator: testutil.EqualEqual(),
 			Right:    &token.LiteralExpr{Value: "lox"},
 		}, true},
 		{&token.BinaryExpr{
 			Left:     &token.LiteralExpr{Value: 2.4},
-			Operator: scanner.Token{TokenType: scanner.BANG_EQUAL},
+			Operator: testutil.BangEqual(),
 			Right:    &token.LiteralExpr{Value: 2.4},
 		}, false},
 		{&token.BinaryExpr{
 			Left:     &token.LiteralExpr{Value: "lox"},
-			Operator: scanner.Token{TokenType: scanner.BANG_EQUAL},
+			Operator: testutil.BangEqual(),
 			Right:    &token.LiteralExpr{Value: "lox"},
 		}, false},
 		{&token.BinaryExpr{
 			Left:     &token.LiteralExpr{Value: "lox"},
-			Operator: scanner.Token{TokenType: scanner.BANG_EQUAL},
+			Operator: testutil.BangEqual(),
 			Right:    &token.LiteralExpr{Value: nil},
 		}, true},
 		{&token.BinaryExpr{
 			Left:     &token.LiteralExpr{Value: 2.4},
-			Operator: scanner.Token{TokenType: scanner.BANG_EQUAL},
+			Operator: testutil.BangEqual(),
 			Right:    &token.LiteralExpr{Value: "lox"},
 		}, true},
 	}
@@ -227,10 +227,10 @@ func TestInterpretBinary(t *testing.T) {
 	}
 }
 
-func TestInterpretBinaryError(t *testing.T) {
+func TestInterpretBinaryExprError(t *testing.T) {
 	expr := &token.BinaryExpr{
 		Left:     &token.LiteralExpr{Value: 16.0},
-		Operator: scanner.Token{TokenType: scanner.STAR},
+		Operator: testutil.Star(),
 		Right:    &token.LiteralExpr{Value: "muffin"},
 	}
 	errs := make([]string, 0)
@@ -250,7 +250,7 @@ func TestInterpretBinaryError(t *testing.T) {
 	}
 }
 
-func TestDeclVar(t *testing.T) {
+func TestDeclVarStmt(t *testing.T) {
 	tok := testutil.Identifier("a")
 	stmt := &token.VarStmt{
 		Name: tok,
@@ -270,7 +270,7 @@ func TestDeclVar(t *testing.T) {
 	assertToken(t, i, &tok, "before")
 }
 
-func TestInterpretAssign(t *testing.T) {
+func TestInterpretAssignExpr(t *testing.T) {
 	errs := make([]string, 0)
 	i := New(testCallBack(&errs))
 
@@ -309,7 +309,7 @@ func TestInterpretAssign(t *testing.T) {
 	assertToken(t, i, &tok, "after")
 }
 
-func TestIfStatement(t *testing.T) {
+func TestIfStmt(t *testing.T) {
 	errs := make([]string, 0)
 	i := New(testCallBack(&errs))
 	ifStmt := &token.IfStmt{
@@ -326,7 +326,7 @@ func TestIfStatement(t *testing.T) {
 	}
 }
 
-func TestBlock(t *testing.T) {
+func TestBlockStmt(t *testing.T) {
 	errs := make([]string, 0)
 	i := New(testCallBack(&errs))
 	tokA, tokB, tokC := testutil.Identifier("a"), testutil.Identifier("b"), testutil.Identifier("c")
@@ -360,7 +360,7 @@ func TestBlock(t *testing.T) {
 	}
 }
 
-func TestInterpretBinaryDivisionByZero(t *testing.T) {
+func TestInterpretBinaryExprDivisionByZero(t *testing.T) {
 	t.Skip()
 	tests := []struct {
 		expr   token.Expr
@@ -368,7 +368,7 @@ func TestInterpretBinaryDivisionByZero(t *testing.T) {
 	}{
 		{&token.BinaryExpr{
 			Left:     &token.LiteralExpr{Value: 256.0},
-			Operator: scanner.Token{TokenType: scanner.SLASH},
+			Operator: testutil.Slash(),
 			Right:    &token.LiteralExpr{Value: 0.0},
 		}, nil},
 	}
