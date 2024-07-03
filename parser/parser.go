@@ -81,7 +81,7 @@ func (p *Parser) variableDeclaration() (token.Stmt, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &token.Var{Name: *name, Initializer: initializer}, nil
+	return &token.VarStmt{Name: *name, Initializer: initializer}, nil
 }
 
 func (p *Parser) statement() (token.Stmt, error) {
@@ -93,7 +93,7 @@ func (p *Parser) statement() (token.Stmt, error) {
 		if err != nil {
 			return nil, err
 		}
-		return &token.Block{Statements: stmts}, nil
+		return &token.BlockStmt{Statements: stmts}, nil
 	}
 	return p.expressionStmt()
 }
@@ -121,7 +121,7 @@ func (p *Parser) printStmt() (token.Stmt, error) {
 	if _, err = p.consume(scanner.SEMICOLON, "expect ';' after value."); err != nil {
 		return nil, err
 	}
-	return &token.Print{Expression: expr}, err
+	return &token.PrintStmt{Expression: expr}, err
 }
 
 func (p *Parser) expressionStmt() (token.Stmt, error) {
@@ -132,7 +132,7 @@ func (p *Parser) expressionStmt() (token.Stmt, error) {
 	if _, err = p.consume(scanner.SEMICOLON, "expect ';' after expression."); err != nil {
 		return nil, err
 	}
-	return &token.Expression{Expression: expr}, err
+	return &token.ExpressionStmt{Expression: expr}, err
 }
 
 func (p *Parser) expression() (token.Expr, error) {
@@ -151,11 +151,11 @@ func (p *Parser) assignment() (token.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-		name, ok := expr.(*token.Variable)
+		name, ok := expr.(*token.VariableExpr)
 		if !ok {
 			return nil, p.error(tokenEquals, "Invalid assignment target.")
 		}
-		return &token.Assign{Name: name.Name, Value: value}, nil
+		return &token.AssignExpr{Name: name.Name, Value: value}, nil
 	}
 	// it's not an assignment, return it
 	return expr, nil
@@ -173,7 +173,7 @@ func (p *Parser) equality() (token.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-		expr = &token.Binary{Left: expr, Operator: op, Right: right}
+		expr = &token.BinaryExpr{Left: expr, Operator: op, Right: right}
 	}
 
 	return expr, nil
@@ -190,7 +190,7 @@ func (p *Parser) comparison() (token.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-		expr = &token.Binary{Left: expr, Operator: op, Right: right}
+		expr = &token.BinaryExpr{Left: expr, Operator: op, Right: right}
 	}
 	return expr, nil
 }
@@ -206,7 +206,7 @@ func (p *Parser) term() (token.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-		expr = &token.Binary{Left: expr, Operator: op, Right: right}
+		expr = &token.BinaryExpr{Left: expr, Operator: op, Right: right}
 	}
 	return expr, nil
 }
@@ -223,7 +223,7 @@ func (p *Parser) factor() (token.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-		expr = &token.Binary{Left: expr, Operator: op, Right: right}
+		expr = &token.BinaryExpr{Left: expr, Operator: op, Right: right}
 	}
 	return expr, nil
 }
@@ -235,7 +235,7 @@ func (p *Parser) unary() (token.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-		return &token.Unary{Operator: op, Right: right}, nil
+		return &token.UnaryExpr{Operator: op, Right: right}, nil
 	}
 	return p.primary()
 }
@@ -243,15 +243,15 @@ func (p *Parser) unary() (token.Expr, error) {
 func (p *Parser) primary() (token.Expr, error) {
 	switch {
 	case p.match(scanner.FALSE):
-		return &token.Literal{Value: false}, nil
+		return &token.LiteralExpr{Value: false}, nil
 	case p.match(scanner.TRUE):
-		return &token.Literal{Value: true}, nil
+		return &token.LiteralExpr{Value: true}, nil
 	case p.match(scanner.NIL):
-		return &token.Literal{Value: nil}, nil
+		return &token.LiteralExpr{Value: nil}, nil
 	case p.match(scanner.NUMBER) || p.match(scanner.STRING):
-		return &token.Literal{Value: p.previous().Literal}, nil
+		return &token.LiteralExpr{Value: p.previous().Literal}, nil
 	case p.match(scanner.IDENTIFIER):
-		return &token.Variable{Name: p.previous()}, nil
+		return &token.VariableExpr{Name: p.previous()}, nil
 	case p.match(scanner.LEFT_PAREN):
 		expr, err := p.expression()
 		if err != nil {
@@ -260,7 +260,7 @@ func (p *Parser) primary() (token.Expr, error) {
 		if _, err = p.consume(scanner.RIGHT_PAREN, "expect ')' after expression."); err != nil {
 			return nil, err
 		}
-		return &token.Grouping{Expression: expr}, err
+		return &token.GroupingExpr{Expression: expr}, err
 
 	}
 	return nil, p.error(p.peek(), "expect expression")

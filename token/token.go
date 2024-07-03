@@ -9,64 +9,64 @@ type Expr interface {
 }
 
 type VisitorExpr interface {
-	VisitAssign(expr *Assign) (interface{}, error)
-	VisitLiteral(expr *Literal) (interface{}, error)
-	VisitUnary(expr *Unary) (interface{}, error)
-	VisitVariable(expr *Variable) (interface{}, error)
-	VisitBinary(expr *Binary) (interface{}, error)
-	VisitGrouping(expr *Grouping) (interface{}, error)
+	VisitAssignExpr(expr *AssignExpr) (interface{}, error)
+	VisitLiteralExpr(expr *LiteralExpr) (interface{}, error)
+	VisitUnaryExpr(expr *UnaryExpr) (interface{}, error)
+	VisitVariableExpr(expr *VariableExpr) (interface{}, error)
+	VisitBinaryExpr(expr *BinaryExpr) (interface{}, error)
+	VisitGroupingExpr(expr *GroupingExpr) (interface{}, error)
 }
 
-type Assign struct {
+type AssignExpr struct {
 	Name scanner.Token
 	Value Expr
 }
 
-func (e *Assign) Accept(visitor VisitorExpr) (interface{}, error) {
-	return visitor.VisitAssign(e)
+func (e *AssignExpr) Accept(visitor VisitorExpr) (interface{}, error) {
+	return visitor.VisitAssignExpr(e)
 }
 
-type Literal struct {
+type LiteralExpr struct {
 	Value interface{}
 }
 
-func (e *Literal) Accept(visitor VisitorExpr) (interface{}, error) {
-	return visitor.VisitLiteral(e)
+func (e *LiteralExpr) Accept(visitor VisitorExpr) (interface{}, error) {
+	return visitor.VisitLiteralExpr(e)
 }
 
-type Unary struct {
+type UnaryExpr struct {
 	Operator scanner.Token
 	Right Expr
 }
 
-func (e *Unary) Accept(visitor VisitorExpr) (interface{}, error) {
-	return visitor.VisitUnary(e)
+func (e *UnaryExpr) Accept(visitor VisitorExpr) (interface{}, error) {
+	return visitor.VisitUnaryExpr(e)
 }
 
-type Variable struct {
+type VariableExpr struct {
 	Name scanner.Token
 }
 
-func (e *Variable) Accept(visitor VisitorExpr) (interface{}, error) {
-	return visitor.VisitVariable(e)
+func (e *VariableExpr) Accept(visitor VisitorExpr) (interface{}, error) {
+	return visitor.VisitVariableExpr(e)
 }
 
-type Binary struct {
+type BinaryExpr struct {
 	Left Expr
 	Operator scanner.Token
 	Right Expr
 }
 
-func (e *Binary) Accept(visitor VisitorExpr) (interface{}, error) {
-	return visitor.VisitBinary(e)
+func (e *BinaryExpr) Accept(visitor VisitorExpr) (interface{}, error) {
+	return visitor.VisitBinaryExpr(e)
 }
 
-type Grouping struct {
+type GroupingExpr struct {
 	Expression Expr
 }
 
-func (e *Grouping) Accept(visitor VisitorExpr) (interface{}, error) {
-	return visitor.VisitGrouping(e)
+func (e *GroupingExpr) Accept(visitor VisitorExpr) (interface{}, error) {
+	return visitor.VisitGroupingExpr(e)
 }
 
 type Stmt interface {
@@ -74,42 +74,42 @@ type Stmt interface {
 }
 
 type VisitorStmt interface {
-	VisitBlock(stmt *Block) (interface{}, error)
-	VisitExpression(stmt *Expression) (interface{}, error)
-	VisitPrint(stmt *Print) (interface{}, error)
-	VisitVar(stmt *Var) (interface{}, error)
+	VisitBlockStmt(stmt *BlockStmt) (interface{}, error)
+	VisitExpressionStmt(stmt *ExpressionStmt) (interface{}, error)
+	VisitPrintStmt(stmt *PrintStmt) (interface{}, error)
+	VisitVarStmt(stmt *VarStmt) (interface{}, error)
 }
 
-type Block struct {
+type BlockStmt struct {
 	Statements []Stmt
 }
 
-func (e *Block) Accept(visitor VisitorStmt) (interface{}, error) {
-	return visitor.VisitBlock(e)
+func (e *BlockStmt) Accept(visitor VisitorStmt) (interface{}, error) {
+	return visitor.VisitBlockStmt(e)
 }
 
-type Expression struct {
+type ExpressionStmt struct {
 	Expression Expr
 }
 
-func (e *Expression) Accept(visitor VisitorStmt) (interface{}, error) {
-	return visitor.VisitExpression(e)
+func (e *ExpressionStmt) Accept(visitor VisitorStmt) (interface{}, error) {
+	return visitor.VisitExpressionStmt(e)
 }
 
-type Print struct {
+type PrintStmt struct {
 	Expression Expr
 }
 
-func (e *Print) Accept(visitor VisitorStmt) (interface{}, error) {
-	return visitor.VisitPrint(e)
+func (e *PrintStmt) Accept(visitor VisitorStmt) (interface{}, error) {
+	return visitor.VisitPrintStmt(e)
 }
 
-type Var struct {
+type VarStmt struct {
 	Name scanner.Token
 	Initializer Expr
 }
 
-func (e *Var) Accept(visitor VisitorStmt) (interface{}, error) {
-	return visitor.VisitVar(e)
+func (e *VarStmt) Accept(visitor VisitorStmt) (interface{}, error) {
+	return visitor.VisitVarStmt(e)
 }
 

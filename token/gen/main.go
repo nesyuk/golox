@@ -22,19 +22,19 @@ func (e *GeneratorError) wrap(err error) *GeneratorError {
 }
 
 var expressions = []string{
-	"Assign: Name scanner.Token, Value Expr",
-	"Literal: Value interface{}",
-	"Unary: Operator scanner.Token, Right Expr",
-	"Variable: Name scanner.Token",
-	"Binary: Left Expr, Operator scanner.Token, Right Expr",
-	"Grouping: Expression Expr",
+	"AssignExpr: Name scanner.Token, Value Expr",
+	"LiteralExpr: Value interface{}",
+	"UnaryExpr: Operator scanner.Token, Right Expr",
+	"VariableExpr: Name scanner.Token",
+	"BinaryExpr: Left Expr, Operator scanner.Token, Right Expr",
+	"GroupingExpr: Expression Expr",
 }
 
 var statements = []string{
-	"Block: Statements []Stmt",
-	"Expression: Expression Expr",
-	"Print: Expression Expr",
-	"Var: Name scanner.Token, Initializer Expr",
+	"BlockStmt: Statements []Stmt",
+	"ExpressionStmt: Expression Expr",
+	"PrintStmt: Expression Expr",
+	"VarStmt: Name scanner.Token, Initializer Expr",
 }
 
 func generateAst(filename string) error {

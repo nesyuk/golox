@@ -30,16 +30,16 @@ func TestParseDeclaration(t *testing.T) {
 	if len(stmts) != 1 {
 		t.Fatalf("expect len(1) got %v", len(stmts))
 	}
-	got, ok := stmts[0].(*token.Var)
+	got, ok := stmts[0].(*token.VarStmt)
 	if !ok {
-		t.Fatalf("expect *token.Var got %T", got)
+		t.Fatalf("expect *token.VarStmt got %T", got)
 	}
 	if got.Name.Lexeme == nil || *got.Name.Lexeme != "a" {
 		t.Fatalf("expect 'a' got '%v'", got.Name.Lexeme)
 	}
-	init, ok := got.Initializer.(*token.Literal)
+	init, ok := got.Initializer.(*token.LiteralExpr)
 	if !ok {
-		t.Fatalf("expect *token.Literal got %T", init)
+		t.Fatalf("expect *token.LiteralExpr got %T", init)
 	}
 	if init.Value != "before" {
 		t.Fatalf("expect 'before' got '%v'", init.Value)
@@ -68,20 +68,20 @@ func TestParseAssign(t *testing.T) {
 	if len(stmts) != 1 {
 		t.Fatalf("expect len(1) got %v", len(stmts))
 	}
-	got, ok := stmts[0].(*token.Expression)
+	got, ok := stmts[0].(*token.ExpressionStmt)
 	if !ok {
 		t.Fatalf("expect *token.Expression got %T", got)
 	}
-	expr, ok := got.Expression.(*token.Assign)
+	expr, ok := got.Expression.(*token.AssignExpr)
 	if !ok {
 		t.Fatalf("expect *token.Assign got %T", got)
 	}
 	if expr.Name.Lexeme == nil || *expr.Name.Lexeme != "a" {
 		t.Fatalf("expect 'a' got '%v'", expr.Name.Lexeme)
 	}
-	value, ok := expr.Value.(*token.Literal)
+	value, ok := expr.Value.(*token.LiteralExpr)
 	if !ok {
-		t.Fatalf("expect *token.Literal got %T", got)
+		t.Fatalf("expect *token.LiteralExpr got %T", got)
 	}
 	if value == nil || value.Value != "after" {
 		t.Fatalf("expect 'after' got '%v'", value.Value)
@@ -323,7 +323,7 @@ func TestParseBlock(t *testing.T) {
 	if len(stmts) != 1 {
 		t.Fatalf("expect len(1) got %v", len(stmts))
 	}
-	got, ok := stmts[0].(*token.Block)
+	got, ok := stmts[0].(*token.BlockStmt)
 	if !ok {
 		t.Fatalf("expect *token.Block got %T", got)
 	}
@@ -331,11 +331,11 @@ func TestParseBlock(t *testing.T) {
 		t.Fatalf("expect len(1) got: %d", len(got.Statements))
 	}
 	gotStmt := got.Statements[0]
-	expr, ok := gotStmt.(*token.Expression)
+	expr, ok := gotStmt.(*token.ExpressionStmt)
 	if !ok {
 		t.Fatalf("expect *token.Expression got %T", gotStmt)
 	}
-	_, ok = expr.Expression.(*token.Binary)
+	_, ok = expr.Expression.(*token.BinaryExpr)
 	if !ok {
 		t.Fatalf("expect *token.Expression got %T", expr.Expression)
 	}

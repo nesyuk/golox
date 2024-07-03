@@ -52,7 +52,7 @@ func (i *Interpreter) exec(stmt token.Stmt) (interface{}, error) {
 	return stmt.Accept(i)
 }
 
-func (i *Interpreter) execBlock(block *token.Block, env *Environment) (interface{}, error) {
+func (i *Interpreter) execBlock(block *token.BlockStmt, env *Environment) (interface{}, error) {
 	prev := i.env
 	i.env = env
 
@@ -68,7 +68,7 @@ func (i *Interpreter) execBlock(block *token.Block, env *Environment) (interface
 	return nil, nil
 }
 
-func (i *Interpreter) VisitAssign(expr *token.Assign) (interface{}, error) {
+func (i *Interpreter) VisitAssignExpr(expr *token.AssignExpr) (interface{}, error) {
 	value, err := i.eval(expr.Value)
 	if err != nil {
 		return nil, err
@@ -79,7 +79,7 @@ func (i *Interpreter) VisitAssign(expr *token.Assign) (interface{}, error) {
 	return value, nil
 }
 
-func (i *Interpreter) VisitExpression(stmt *token.Expression) (interface{}, error) {
+func (i *Interpreter) VisitExpressionStmt(stmt *token.ExpressionStmt) (interface{}, error) {
 	_, err := i.eval(stmt.Expression)
 	if err != nil {
 		return nil, err
@@ -87,7 +87,7 @@ func (i *Interpreter) VisitExpression(stmt *token.Expression) (interface{}, erro
 	return nil, err
 }
 
-func (i *Interpreter) VisitPrint(stmt *token.Print) (interface{}, error) {
+func (i *Interpreter) VisitPrintStmt(stmt *token.PrintStmt) (interface{}, error) {
 	result, err := i.eval(stmt.Expression)
 	if err != nil {
 		return nil, err
@@ -96,7 +96,7 @@ func (i *Interpreter) VisitPrint(stmt *token.Print) (interface{}, error) {
 	return nil, nil
 }
 
-func (i *Interpreter) VisitVar(stmt *token.Var) (interface{}, error) {
+func (i *Interpreter) VisitVarStmt(stmt *token.VarStmt) (interface{}, error) {
 	var value interface{}
 	if stmt.Initializer != nil {
 		var err error
@@ -109,15 +109,15 @@ func (i *Interpreter) VisitVar(stmt *token.Var) (interface{}, error) {
 	return nil, nil
 }
 
-func (i *Interpreter) VisitBlock(block *token.Block) (interface{}, error) {
+func (i *Interpreter) VisitBlockStmt(block *token.BlockStmt) (interface{}, error) {
 	return i.execBlock(block, NewScopeEnvironment(i.env))
 }
 
-func (i *Interpreter) VisitLiteral(expr *token.Literal) (interface{}, error) {
+func (i *Interpreter) VisitLiteralExpr(expr *token.LiteralExpr) (interface{}, error) {
 	return expr.Value, nil
 }
 
-func (i *Interpreter) VisitUnary(expr *token.Unary) (interface{}, error) {
+func (i *Interpreter) VisitUnaryExpr(expr *token.UnaryExpr) (interface{}, error) {
 	right, err := i.eval(expr.Right)
 	if err != nil {
 		return nil, err
@@ -135,7 +135,7 @@ func (i *Interpreter) VisitUnary(expr *token.Unary) (interface{}, error) {
 	return nil, nil
 }
 
-func (i *Interpreter) VisitBinary(expr *token.Binary) (interface{}, error) {
+func (i *Interpreter) VisitBinaryExpr(expr *token.BinaryExpr) (interface{}, error) {
 	left, err := i.eval(expr.Left)
 	if err != nil {
 		return nil, err
@@ -209,11 +209,11 @@ func (i *Interpreter) VisitBinary(expr *token.Binary) (interface{}, error) {
 	return nil, nil
 }
 
-func (i *Interpreter) VisitGrouping(expr *token.Grouping) (interface{}, error) {
+func (i *Interpreter) VisitGroupingExpr(expr *token.GroupingExpr) (interface{}, error) {
 	return i.eval(expr.Expression)
 }
 
-func (i *Interpreter) VisitVariable(variable *token.Variable) (interface{}, error) {
+func (i *Interpreter) VisitVariableExpr(variable *token.VariableExpr) (interface{}, error) {
 	return i.env.Get(&variable.Name)
 }
 
