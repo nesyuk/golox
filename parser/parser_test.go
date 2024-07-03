@@ -114,7 +114,7 @@ func TestParseAssignError(t *testing.T) {
 		t.Fatalf("expect len(1) got %v", len(errors))
 	}
 	if errors[0] != "Invalid assignment target." {
-		t.Fatalf("expect 'Invalid assignment target.' got %v", errors[0])
+		t.Fatalf("expect 'Invalid assignment target.' got '%v'", errors[0])
 	}
 }
 
@@ -292,6 +292,81 @@ func TestParseGroupingErrors(t *testing.T) {
 	}
 	if errors[0] != "expect ')' after expression." {
 		t.Fatalf("expect: 'expect ')' after expression.', got: '%v'", errors[0])
+	}
+}
+
+func TestParseBlock(t *testing.T) {
+	errors := make([]string, 0)
+	p := NewParser(
+		[]scanner.Token{
+			testutil.LeftBrace(),
+			testutil.Number(321.0),
+			testutil.Star(),
+			testutil.Number(123.0),
+			testutil.Semicolon(),
+			testutil.RightBrace(),
+			testutil.Eof(),
+		},
+		testCallBack(&errors),
+	)
+	stmts, err := p.Parse()
+	if err != nil {
+		t.Fatalf("expect: nil got: %v", err)
+	}
+	if len(errors) != 0 {
+		t.Log(errors)
+		t.Fatalf("expect empty len(error) got %d", len(errors))
+	}
+	if stmts == nil {
+		t.Fatal("expect not nil")
+	}
+	if len(stmts) != 1 {
+		t.Fatalf("expect len(1) got %v", len(stmts))
+	}
+	got, ok := stmts[0].(*token.Block)
+	if !ok {
+		t.Fatalf("expect *token.Block got %T", got)
+	}
+	if len(got.Statements) != 1 {
+		t.Fatalf("expect len(1) got: %d", len(got.Statements))
+	}
+	gotStmt := got.Statements[0]
+	expr, ok := gotStmt.(*token.Expression)
+	if !ok {
+		t.Fatalf("expect *token.Expression got %T", gotStmt)
+	}
+	_, ok = expr.Expression.(*token.Binary)
+	if !ok {
+		t.Fatalf("expect *token.Expression got %T", expr.Expression)
+	}
+}
+
+func TestParseBlockError(t *testing.T) {
+	errors := make([]string, 0)
+	p := NewParser(
+		[]scanner.Token{
+			testutil.LeftBrace(),
+			testutil.Number(321.0),
+			testutil.Star(),
+			testutil.Number(123.0),
+			testutil.Semicolon(),
+			testutil.Eof(),
+		},
+		testCallBack(&errors),
+	)
+	stmts, err := p.Parse()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(stmts) > 0 {
+		t.Fatalf("expect empty, got %v", stmts)
+	}
+	if len(errors) != 1 {
+		t.Log(errors)
+		t.Fatalf("expect len(1) got '%v'", len(errors))
+	}
+	if errors[0] != "Expect '}' after block." {
+		t.Fatalf("expect 'Expect '}' after block.' got %v", errors[0])
 	}
 }
 

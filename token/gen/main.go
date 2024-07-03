@@ -31,6 +31,7 @@ var expressions = []string{
 }
 
 var statements = []string{
+	"Block: Statements []Stmt",
 	"Expression: Expression Expr",
 	"Print: Expression Expr",
 	"Var: Name scanner.Token, Initializer Expr",

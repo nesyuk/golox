@@ -10,9 +10,10 @@ import (
     program -> declaration* EOF
     declaration -> varDecl | statement
     varDecl -> "var" IDENTIFIER ("=" expression)? ";"
-    statement -> exprStmt | printStmt
+    statement -> exprStmt | printStmt | block
     exprStmt -> expression ";"
     printStmt -> "print" expression
+    block -> "{" declaration* "}"
 	expression -> assignment
     assignment -> IDENTIFIER "-" assignment | equality
 	equality -> comparison (("!=" | "==") comparison)*
@@ -84,10 +85,32 @@ func (p *Parser) variableDeclaration() (token.Stmt, error) {
 }
 
 func (p *Parser) statement() (token.Stmt, error) {
-	if p.match(scanner.PRINT) {
+	switch {
+	case p.match(scanner.PRINT):
 		return p.printStmt()
+	case p.match(scanner.LEFT_BRACE):
+		stmts, err := p.block()
+		if err != nil {
+			return nil, err
+		}
+		return &token.Block{Statements: stmts}, nil
 	}
 	return p.expressionStmt()
+}
+
+func (p *Parser) block() ([]token.Stmt, error) {
+	stmts := make([]token.Stmt, 0)
+	for !p.check(scanner.RIGHT_BRACE) && !p.isAtEnd() {
+		stmt, err := p.declaration()
+		if err != nil {
+			return nil, err
+		}
+		stmts = append(stmts, stmt)
+	}
+	if _, err := p.consume(scanner.RIGHT_BRACE, "Expect '}' after block."); err != nil {
+		return nil, err
+	}
+	return stmts, nil
 }
 
 func (p *Parser) printStmt() (token.Stmt, error) {

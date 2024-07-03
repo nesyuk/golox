@@ -29,6 +29,16 @@ func RightParen() scanner.Token {
 	return scanner.Token{TokenType: scanner.RIGHT_PAREN, Lexeme: &lexeme, Line: 1}
 }
 
+func LeftBrace() scanner.Token {
+	lexeme := "{"
+	return scanner.Token{TokenType: scanner.LEFT_BRACE, Lexeme: &lexeme, Line: 1}
+}
+
+func RightBrace() scanner.Token {
+	lexeme := "}"
+	return scanner.Token{TokenType: scanner.RIGHT_BRACE, Lexeme: &lexeme, Line: 1}
+}
+
 func Minus() scanner.Token {
 	lexeme := "-"
 	return scanner.Token{TokenType: scanner.MINUS, Lexeme: &lexeme, Line: 1}

@@ -16,6 +16,7 @@ func TestRun(t *testing.T) {
 		{"print (3 + 2;", "", true, false},
 		{"print 3 + \"2\";", "", false, true},
 		{"var a = 1; var b = 2; print a + b;", "", false, false},
+		{"var a = 1; {var a = 2; print a;} print a;", "", false, false},
 	}
 	for _, test := range tests {
 		lox := newLox()

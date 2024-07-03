@@ -309,6 +309,40 @@ func TestInterpretAssign(t *testing.T) {
 	assertToken(t, i, &tok, "after")
 }
 
+func TestBlock(t *testing.T) {
+	errs := make([]string, 0)
+	i := New(testCallBack(&errs))
+	tokA, tokB, tokC := testutil.Identifier("a"), testutil.Identifier("b"), testutil.Identifier("c")
+	block := &token.Block{Statements: []token.Stmt{
+		&token.Var{Name: tokA, Initializer: &token.Literal{Value: testutil.Str("global a")}},
+		&token.Var{Name: tokB, Initializer: &token.Literal{Value: testutil.Str("global b")}},
+		&token.Var{Name: tokC, Initializer: &token.Literal{Value: testutil.Str("global c")}},
+		&token.Block{Statements: []token.Stmt{
+			&token.Var{Name: tokA, Initializer: &token.Literal{Value: testutil.Str("outer a")}},
+			&token.Var{Name: tokB, Initializer: &token.Literal{Value: testutil.Str("outer b")}},
+			&token.Block{Statements: []token.Stmt{
+				&token.Var{Name: tokA, Initializer: &token.Literal{Value: testutil.Str("inner a")}},
+				&token.Print{Expression: &token.Variable{Name: tokA}},
+				&token.Print{Expression: &token.Variable{Name: tokB}},
+				&token.Print{Expression: &token.Variable{Name: tokC}},
+			}},
+			&token.Print{Expression: &token.Variable{Name: tokA}},
+			&token.Print{Expression: &token.Variable{Name: tokB}},
+			&token.Print{Expression: &token.Variable{Name: tokC}},
+		}},
+		&token.Print{Expression: &token.Variable{Name: tokA}},
+		&token.Print{Expression: &token.Variable{Name: tokB}},
+		&token.Print{Expression: &token.Variable{Name: tokC}},
+	}}
+	got, err := i.exec(block)
+	if got != nil {
+		t.Fatalf("expect nil")
+	}
+	if err != nil {
+		t.Fatalf("expect nil got %v", err)
+	}
+}
+
 func TestInterpretBinaryDivisionByZero(t *testing.T) {
 	t.Skip()
 	tests := []struct {

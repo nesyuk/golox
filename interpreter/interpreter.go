@@ -52,6 +52,22 @@ func (i *Interpreter) exec(stmt token.Stmt) (interface{}, error) {
 	return stmt.Accept(i)
 }
 
+func (i *Interpreter) execBlock(block *token.Block, env *Environment) (interface{}, error) {
+	prev := i.env
+	i.env = env
+
+	defer func() {
+		i.env = prev
+	}()
+
+	for _, stmt := range block.Statements {
+		if _, err := i.exec(stmt); err != nil {
+			return nil, err
+		}
+	}
+	return nil, nil
+}
+
 func (i *Interpreter) VisitAssign(expr *token.Assign) (interface{}, error) {
 	value, err := i.eval(expr.Value)
 	if err != nil {
@@ -91,6 +107,10 @@ func (i *Interpreter) VisitVar(stmt *token.Var) (interface{}, error) {
 	}
 	i.env.Define(*stmt.Name.Lexeme, value)
 	return nil, nil
+}
+
+func (i *Interpreter) VisitBlock(block *token.Block) (interface{}, error) {
+	return i.execBlock(block, NewScopeEnvironment(i.env))
 }
 
 func (i *Interpreter) VisitLiteral(expr *token.Literal) (interface{}, error) {
