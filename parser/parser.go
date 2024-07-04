@@ -16,7 +16,7 @@ import (
     printStmt -> "print" expression
     block -> "{" declaration* "}"
 	expression -> assignment
-    assignment -> IDENTIFIER "-" assignment | equality
+    assignment -> IDENTIFIER "=" assignment | equality
 	equality -> comparison (("!=" | "==") comparison)*
 	comparison -> term  ((">" | ">=" | "<" | "<=") term)*
 	term -> factor (("-" | "+") factor)*
