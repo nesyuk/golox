@@ -16,7 +16,9 @@ import (
     printStmt -> "print" expression
     block -> "{" declaration* "}"
 	expression -> assignment
-    assignment -> IDENTIFIER "=" assignment | equality
+    assignment -> IDENTIFIER "=" assignment | logicOr
+	logicOr -> logicAnd ( "or" logicAnd )*
+	logicAnd-> equality ( "and" equality )*
 	equality -> comparison (("!=" | "==") comparison)*
 	comparison -> term  ((">" | ">=" | "<" | "<=") term)*
 	term -> factor (("-" | "+") factor)*
@@ -170,7 +172,7 @@ func (p *Parser) expression() (token.Expr, error) {
 }
 
 func (p *Parser) assignment() (token.Expr, error) {
-	expr, err := p.equality()
+	expr, err := p.or()
 	if err != nil {
 		return nil, err
 	}
@@ -187,7 +189,39 @@ func (p *Parser) assignment() (token.Expr, error) {
 		}
 		return &token.AssignExpr{Name: name.Name, Value: value}, nil
 	}
-	// it's not an assignment, return it
+	// it's not an 'or' expression, return it
+	return expr, nil
+}
+
+func (p *Parser) or() (token.Expr, error) {
+	expr, err := p.and()
+	if err != nil {
+		return nil, err
+	}
+	for p.match(scanner.OR) {
+		op := p.previous()
+		right, err := p.and()
+		if err != nil {
+			return nil, err
+		}
+		expr = &token.LogicalExpr{Operator: op, Left: expr, Right: right}
+	}
+	return expr, nil
+}
+
+func (p *Parser) and() (token.Expr, error) {
+	expr, err := p.equality()
+	if err != nil {
+		return nil, err
+	}
+	for p.match(scanner.AND) {
+		op := p.previous()
+		right, err := p.equality()
+		if err != nil {
+			return nil, err
+		}
+		expr = &token.LogicalExpr{Operator: op, Left: expr, Right: right}
+	}
 	return expr, nil
 }
 

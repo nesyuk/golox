@@ -88,6 +88,15 @@ func Str(s string) scanner.Token {
 	return scanner.Token{TokenType: scanner.STRING, Lexeme: &s, Literal: s, Line: 1}
 }
 
+func Or() scanner.Token {
+	lexeme := "or"
+	return scanner.Token{TokenType: scanner.OR, Lexeme: &lexeme, Line: 1}
+}
+
+func And() scanner.Token {
+	lexeme := "and"
+	return scanner.Token{TokenType: scanner.AND, Lexeme: &lexeme, Line: 1}
+}
 func Semicolon() scanner.Token {
 	lexeme := ";"
 	return scanner.Token{TokenType: scanner.SEMICOLON, Lexeme: &lexeme, Line: 1}

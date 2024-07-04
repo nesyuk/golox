@@ -326,6 +326,38 @@ func TestIfStmt(t *testing.T) {
 	}
 }
 
+func TestLogicalOrExpr(t *testing.T) {
+	errs := make([]string, 0)
+	i := New(testCallBack(&errs))
+	tests := []struct {
+		expr   *token.LogicalExpr
+		expect interface{}
+	}{
+		{&token.LogicalExpr{
+			Left:     &token.LiteralExpr{Value: "hi"},
+			Operator: testutil.Or(),
+			Right:    &token.LiteralExpr{Value: 2.0},
+		}, "hi"},
+		{&token.LogicalExpr{
+			Left:     &token.LiteralExpr{Value: nil},
+			Operator: testutil.Or(),
+			Right:    &token.LiteralExpr{Value: "yes"},
+		}, "yes"},
+	}
+	for _, test := range tests {
+		got, err := i.eval(test.expr)
+		if got == nil {
+			t.Fatalf("expect not empty")
+		}
+		if got != "hi" {
+			t.Fatalf("expect '%v' got '%v'", test.expect, got)
+		}
+		if err != nil {
+			t.Fatalf("expect nil got '%v'", err)
+		}
+	}
+}
+
 func TestBlockStmt(t *testing.T) {
 	errs := make([]string, 0)
 	i := New(testCallBack(&errs))

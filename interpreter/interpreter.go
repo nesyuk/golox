@@ -68,6 +68,22 @@ func (i *Interpreter) execBlock(block *token.BlockStmt, env *Environment) (inter
 	return nil, nil
 }
 
+func (i *Interpreter) VisitLogicalExpr(expr *token.LogicalExpr) (interface{}, error) {
+	left, err := i.eval(expr.Left)
+	if err != nil {
+		return nil, err
+	}
+	if expr.Operator.TokenType == scanner.OR {
+		if i.isTruthy(left) {
+			return left, nil
+		}
+	} else if !i.isTruthy(left) {
+		// logical 'and'
+		return left, nil
+	}
+	return i.eval(expr.Right)
+}
+
 func (i *Interpreter) VisitAssignExpr(expr *token.AssignExpr) (interface{}, error) {
 	value, err := i.eval(expr.Value)
 	if err != nil {

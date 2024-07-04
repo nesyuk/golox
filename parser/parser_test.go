@@ -287,6 +287,60 @@ func TestParseBlockStmtError(t *testing.T) {
 	validateHasErrors(t, stmts, errors, err, "Expect '}' after block.")
 }
 
+func TestParseLogicalOrExpr(t *testing.T) {
+	errors := make([]string, 0)
+	p := NewParser(
+		[]scanner.Token{
+			testutil.Str("5"),
+			testutil.Or(),
+			testutil.Str("4"),
+			testutil.Semicolon(),
+			testutil.Eof(),
+		},
+		testCallBack(&errors),
+	)
+	stmts, err := p.Parse()
+	validateNoError(t, stmts, errors, err)
+	got, ok := stmts[0].(*token.ExpressionStmt)
+	if !ok {
+		t.Fatalf("expect *token.ExpressionStmt got %T", got)
+	}
+	expr, ok := got.Expression.(*token.LogicalExpr)
+	if !ok {
+		t.Fatalf("expect *token.LogicalExpr got %T", expr)
+	}
+	if expr.Operator.TokenType != scanner.OR {
+		t.Fatalf("expect scanner.OR got %T", expr.Operator.TokenType)
+	}
+}
+
+func TestParseLogicalAndExpr(t *testing.T) {
+	errors := make([]string, 0)
+	p := NewParser(
+		[]scanner.Token{
+			testutil.Str("5"),
+			testutil.And(),
+			testutil.Str("4"),
+			testutil.Semicolon(),
+			testutil.Eof(),
+		},
+		testCallBack(&errors),
+	)
+	stmts, err := p.Parse()
+	validateNoError(t, stmts, errors, err)
+	got, ok := stmts[0].(*token.ExpressionStmt)
+	if !ok {
+		t.Fatalf("expect *token.ExpressionStmt got %T", got)
+	}
+	expr, ok := got.Expression.(*token.LogicalExpr)
+	if !ok {
+		t.Fatalf("expect *token.LogicalExpr got %T", expr)
+	}
+	if expr.Operator.TokenType != scanner.AND {
+		t.Fatalf("expect scanner.AND got %T", expr.Operator.TokenType)
+	}
+}
+
 var testCallBack = func(errs *[]string) ErrorCallback {
 	return func(token scanner.Token, message string) {
 		*errs = append(*errs, message)

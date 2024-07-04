@@ -24,6 +24,7 @@ func (e *GeneratorError) wrap(err error) *GeneratorError {
 var expressions = []string{
 	"AssignExpr: Name scanner.Token, Value Expr",
 	"LiteralExpr: Value interface{}",
+	"LogicalExpr: Left Expr, Operator scanner.Token, Right Expr",
 	"UnaryExpr: Operator scanner.Token, Right Expr",
 	"VariableExpr: Name scanner.Token",
 	"BinaryExpr: Left Expr, Operator scanner.Token, Right Expr",
