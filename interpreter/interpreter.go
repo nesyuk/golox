@@ -113,9 +113,8 @@ func (i *Interpreter) VisitPrintStmt(stmt *token.PrintStmt) (interface{}, error)
 }
 
 func (i *Interpreter) VisitWhileStmt(stmt *token.WhileStmt) (interface{}, error) {
-	var cond interface{}
-	var err error
-	for cond, err = i.eval(stmt.Condition); err == nil && i.isTruthy(cond); {
+	cond, err := i.eval(stmt.Condition)
+	for ; err == nil && i.isTruthy(cond); cond, err = i.eval(stmt.Condition) {
 		if _, err = i.exec(stmt.Body); err != nil {
 			return nil, err
 		}

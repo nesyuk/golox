@@ -255,7 +255,7 @@ func TestDeclVarStmt(t *testing.T) {
 	stmt := &token.VarStmt{
 		Name: tok,
 		Initializer: &token.LiteralExpr{
-			Value: testutil.Str("before"),
+			Value: "before",
 		},
 	}
 	errs := make([]string, 0)
@@ -267,7 +267,7 @@ func TestDeclVarStmt(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expect nil got %v", err)
 	}
-	assertToken(t, i, &tok, "before")
+	assertValue(t, i, &tok, "before")
 }
 
 func TestInterpretAssignExpr(t *testing.T) {
@@ -278,18 +278,18 @@ func TestInterpretAssignExpr(t *testing.T) {
 	declStmt := &token.VarStmt{
 		Name: tok,
 		Initializer: &token.LiteralExpr{
-			Value: testutil.Str("before"),
+			Value: "before",
 		},
 	}
 	if _, err := i.exec(declStmt); err != nil {
 		t.Fatalf("expect nil got %v", err)
 	}
-	assertToken(t, i, &tok, "before")
+	assertValue(t, i, &tok, "before")
 
 	assign := &token.AssignExpr{
 		Name: tok,
 		Value: &token.LiteralExpr{
-			Value: testutil.Str("after"),
+			Value: "after",
 		},
 	}
 	got, err := i.eval(assign)
@@ -299,14 +299,7 @@ func TestInterpretAssignExpr(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expect nil got %v", err)
 	}
-	gotLiteral, ok := got.(scanner.Token)
-	if !ok {
-		t.Fatalf("expect *token.Literal got %T", got)
-	}
-	if gotLiteral.Literal != "after" {
-		t.Fatalf("expect 'after' got %v", gotLiteral.Literal)
-	}
-	assertToken(t, i, &tok, "after")
+	assertValue(t, i, &tok, "after")
 }
 
 func TestIfStmt(t *testing.T) {
@@ -318,6 +311,37 @@ func TestIfStmt(t *testing.T) {
 		ElseBranch: &token.PrintStmt{Expression: &token.LiteralExpr{Value: "is false"}},
 	}
 	got, err := i.exec(ifStmt)
+	if got != nil {
+		t.Fatalf("expect nil")
+	}
+	if err != nil {
+		t.Fatalf("expect nil got %v", err)
+	}
+}
+
+func TestWhileStmt(t *testing.T) {
+	errs := make([]string, 0)
+	i := New(testCallBack(&errs))
+	tok := testutil.Identifier("i")
+	stmt := &token.BlockStmt{
+		Statements: []token.Stmt{
+			&token.VarStmt{Name: tok, Initializer: &token.LiteralExpr{Value: 1.0}},
+			&token.WhileStmt{
+				Condition: &token.BinaryExpr{Left: &token.VariableExpr{Name: tok}, Operator: testutil.Less(), Right: &token.LiteralExpr{Value: 1.0}},
+				Body: &token.BlockStmt{
+					Statements: []token.Stmt{
+						&token.PrintStmt{Expression: &token.VariableExpr{Name: tok}},
+						&token.ExpressionStmt{
+							Expression: &token.BinaryExpr{
+								Left:     &token.VariableExpr{Name: tok},
+								Operator: testutil.Plus(),
+								Right:    &token.LiteralExpr{Value: 1.0}}},
+					},
+				},
+			},
+		},
+	}
+	got, err := i.exec(stmt)
 	if got != nil {
 		t.Fatalf("expect nil")
 	}
@@ -349,7 +373,7 @@ func TestLogicalOrExpr(t *testing.T) {
 		if got == nil {
 			t.Fatalf("expect not empty")
 		}
-		if got != "hi" {
+		if got != test.expect {
 			t.Fatalf("expect '%v' got '%v'", test.expect, got)
 		}
 		if err != nil {
@@ -363,14 +387,14 @@ func TestBlockStmt(t *testing.T) {
 	i := New(testCallBack(&errs))
 	tokA, tokB, tokC := testutil.Identifier("a"), testutil.Identifier("b"), testutil.Identifier("c")
 	block := &token.BlockStmt{Statements: []token.Stmt{
-		&token.VarStmt{Name: tokA, Initializer: &token.LiteralExpr{Value: testutil.Str("global a")}},
-		&token.VarStmt{Name: tokB, Initializer: &token.LiteralExpr{Value: testutil.Str("global b")}},
-		&token.VarStmt{Name: tokC, Initializer: &token.LiteralExpr{Value: testutil.Str("global c")}},
+		&token.VarStmt{Name: tokA, Initializer: &token.LiteralExpr{Value: "global a"}},
+		&token.VarStmt{Name: tokB, Initializer: &token.LiteralExpr{Value: "global b"}},
+		&token.VarStmt{Name: tokC, Initializer: &token.LiteralExpr{Value: "global c"}},
 		&token.BlockStmt{Statements: []token.Stmt{
-			&token.VarStmt{Name: tokA, Initializer: &token.LiteralExpr{Value: testutil.Str("outer a")}},
-			&token.VarStmt{Name: tokB, Initializer: &token.LiteralExpr{Value: testutil.Str("outer b")}},
+			&token.VarStmt{Name: tokA, Initializer: &token.LiteralExpr{Value: "outer a"}},
+			&token.VarStmt{Name: tokB, Initializer: &token.LiteralExpr{Value: "outer b"}},
 			&token.BlockStmt{Statements: []token.Stmt{
-				&token.VarStmt{Name: tokA, Initializer: &token.LiteralExpr{Value: testutil.Str("inner a")}},
+				&token.VarStmt{Name: tokA, Initializer: &token.LiteralExpr{Value: "inner a"}},
 				&token.PrintStmt{Expression: &token.VariableExpr{Name: tokA}},
 				&token.PrintStmt{Expression: &token.VariableExpr{Name: tokB}},
 				&token.PrintStmt{Expression: &token.VariableExpr{Name: tokC}},
@@ -382,6 +406,56 @@ func TestBlockStmt(t *testing.T) {
 		&token.PrintStmt{Expression: &token.VariableExpr{Name: tokA}},
 		&token.PrintStmt{Expression: &token.VariableExpr{Name: tokB}},
 		&token.PrintStmt{Expression: &token.VariableExpr{Name: tokC}},
+	}}
+	got, err := i.exec(block)
+	if got != nil {
+		t.Fatalf("expect nil")
+	}
+	if err != nil {
+		t.Fatalf("expect nil got %v", err)
+	}
+}
+
+func TestVariableInEqualityExpr(t *testing.T) {
+	errs := make([]string, 0)
+	i := New(testCallBack(&errs))
+	tokI := testutil.Identifier("i")
+	block := &token.BlockStmt{Statements: []token.Stmt{
+		&token.VarStmt{Name: tokI, Initializer: &token.LiteralExpr{Value: 1.0}},
+		&token.ExpressionStmt{Expression: &token.AssignExpr{
+			Name: tokI,
+			Value: &token.BinaryExpr{
+				Left:     &token.VariableExpr{Name: tokI},
+				Operator: testutil.Less(),
+				Right:    &token.LiteralExpr{Value: 2.0},
+			}},
+		},
+		&token.PrintStmt{Expression: &token.VariableExpr{Name: tokI}},
+	}}
+	got, err := i.exec(block)
+	if got != nil {
+		t.Fatalf("expect nil")
+	}
+	if err != nil {
+		t.Fatalf("expect nil got %v", err)
+	}
+}
+
+func TestVariableInBinaryExpr(t *testing.T) {
+	errs := make([]string, 0)
+	i := New(testCallBack(&errs))
+	tokI := testutil.Identifier("i")
+	block := &token.BlockStmt{Statements: []token.Stmt{
+		&token.VarStmt{Name: tokI, Initializer: &token.LiteralExpr{Value: 1.0}},
+		&token.ExpressionStmt{Expression: &token.AssignExpr{
+			Name: tokI,
+			Value: &token.BinaryExpr{
+				Left:     &token.VariableExpr{Name: tokI},
+				Operator: testutil.Plus(),
+				Right:    &token.LiteralExpr{Value: 1.0},
+			}},
+		},
+		&token.PrintStmt{Expression: &token.VariableExpr{Name: tokI}},
 	}}
 	got, err := i.exec(block)
 	if got != nil {
@@ -425,17 +499,13 @@ func TestIsTruthy(t *testing.T) {
 	}
 }
 
-func assertToken(t *testing.T, i *Interpreter, tok *scanner.Token, expect interface{}) {
+func assertValue(t *testing.T, i *Interpreter, tok *scanner.Token, expect interface{}) {
 	value, err := i.env.Get(tok)
 	if err != nil {
 		t.Fatalf("expect nil got %v", err)
 	}
-	gotToken, ok := value.(scanner.Token)
-	if !ok {
-		t.Fatalf("expect *token.Literal got %T", gotToken)
-	}
-	if gotToken.Literal != expect {
-		t.Fatalf("expect '%v' got %v", expect, gotToken.Literal)
+	if value != expect {
+		t.Fatalf("expect '%v' got %v", expect, value)
 	}
 }
 
@@ -443,4 +513,9 @@ var testCallBack = func(errs *[]string) ErrorCallback {
 	return func(err *RuntimeError) {
 		*errs = append(*errs, err.Error())
 	}
+}
+
+func numberIdentifier(name string, value float64) *token.VarStmt {
+	tok := testutil.Identifier(name)
+	return &token.VarStmt{Name: tok, Initializer: &token.LiteralExpr{Value: testutil.Number(value)}}
 }
