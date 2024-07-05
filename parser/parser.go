@@ -12,6 +12,7 @@ import (
     varDecl -> "var" IDENTIFIER ("=" expression)? ";"
     statement -> exprStmt | printStmt | block
     exprStmt -> expression ";"
+    forStmt -> "for" "( (varDecl | exprStmt) ";" expr? ";" expr? ")" statement
 	ifStmt ->  "if" "(" expression ")" statement ( "else" statement )?
     printStmt -> "print" expression
 	whileStmt -> "while" "(" expression ")" statement
@@ -90,6 +91,8 @@ func (p *Parser) variableDeclaration() (token.Stmt, error) {
 
 func (p *Parser) statement() (token.Stmt, error) {
 	switch {
+	case p.match(scanner.FOR):
+		return p.forStatement()
 	case p.match(scanner.IF):
 		return p.ifStatement()
 	case p.match(scanner.PRINT):
@@ -104,6 +107,72 @@ func (p *Parser) statement() (token.Stmt, error) {
 		return &token.BlockStmt{Statements: stmts}, nil
 	}
 	return p.expressionStmt()
+}
+
+func (p *Parser) forStatement() (token.Stmt, error) {
+	if _, err := p.consume(scanner.LEFT_PAREN, "Expect '(' after 'for'."); err != nil {
+		return nil, err
+	}
+
+	var initializer token.Stmt
+	var err error
+	switch {
+	case p.match(scanner.SEMICOLON):
+	// no initialization
+	case p.match(scanner.VAR):
+		initializer, err = p.variableDeclaration()
+		if err != nil {
+			return nil, err
+		}
+	default:
+		initializer, err = p.expressionStmt()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	var condition token.Expr
+	if !p.check(scanner.SEMICOLON) {
+		condition, err = p.expression()
+		if err != nil {
+			return nil, err
+		}
+	}
+	if _, err = p.consume(scanner.SEMICOLON, "Expect ';' after loop condition."); err != nil {
+		return nil, err
+	}
+
+	var increment token.Expr
+	if !p.check(scanner.RIGHT_PAREN) {
+		increment, err = p.expression()
+		if err != nil {
+			return nil, err
+		}
+	}
+	if _, err = p.consume(scanner.RIGHT_PAREN, "Expect ')' after for clauses."); err != nil {
+		return nil, err
+	}
+
+	if condition == nil {
+		condition = &token.LiteralExpr{Value: true}
+	}
+
+	body, err := p.statement()
+	if err != nil {
+		return nil, err
+	}
+
+	if increment != nil {
+		body = &token.BlockStmt{Statements: []token.Stmt{body, &token.ExpressionStmt{Expression: increment}}}
+	}
+
+	body = &token.WhileStmt{Condition: condition, Body: body}
+
+	if initializer != nil {
+		body = &token.BlockStmt{Statements: []token.Stmt{initializer, body}}
+	}
+
+	return body, nil
 }
 
 func (p *Parser) whileStatement() (token.Stmt, error) {

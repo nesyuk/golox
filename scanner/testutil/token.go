@@ -25,6 +25,11 @@ func While() scanner.Token {
 	return scanner.Token{TokenType: scanner.WHILE, Lexeme: &lexeme, Line: 1}
 }
 
+func For() scanner.Token {
+	lexeme := "for"
+	return scanner.Token{TokenType: scanner.FOR, Lexeme: &lexeme, Line: 1}
+}
+
 func VarDecl() scanner.Token {
 	lexeme := "var"
 	return scanner.Token{TokenType: scanner.VAR, Lexeme: &lexeme, Line: 1}

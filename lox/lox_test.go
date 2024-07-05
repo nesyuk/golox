@@ -18,6 +18,7 @@ func TestRun(t *testing.T) {
 		{"var a = 1; var b = 2; print a + b;", "", false, false},
 		{"var a = 1; {var a = 2; print a;} print a;", "", false, false},
 		{"var i = 1; while(i < 3) {print i; i = i + 1;}", "", false, false},
+		{"var a = 0; var temp; for (var b = 1; a < 10000; b = temp + b) { print a; temp = a; a = b;}", "", false, false},
 	}
 	for _, test := range tests {
 		lox := newLox()

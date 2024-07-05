@@ -364,6 +364,55 @@ func TestWhileStmt(t *testing.T) {
 	}
 }
 
+func TestForStmt(t *testing.T) {
+	errors := make([]string, 0)
+	p := NewParser(
+		[]scanner.Token{
+			testutil.For(),
+
+			testutil.LeftParen(),
+			// initialization
+			testutil.VarDecl(),
+			testutil.Identifier("i"),
+			testutil.Equal(),
+			testutil.Number(1.0),
+			testutil.Semicolon(),
+			// condition
+			testutil.Identifier("i"),
+			testutil.Less(),
+			testutil.Number(3.0),
+			testutil.Semicolon(),
+			// increment
+			testutil.Identifier("i"),
+			testutil.Equal(),
+			testutil.Identifier("i"),
+			testutil.Plus(),
+			testutil.Number(1.0),
+			testutil.RightParen(),
+
+			testutil.Print(),
+			testutil.Str("Hurray!"),
+			testutil.Semicolon(),
+			testutil.Eof(),
+		},
+		testCallBack(&errors),
+	)
+	stmts, err := p.Parse()
+	validateNoError(t, stmts, errors, err)
+	stmt, ok := stmts[0].(*token.BlockStmt)
+	if !ok {
+		t.Fatalf("expect *token.WhileStmt got %T", stmts[0])
+	}
+	_, ok = stmt.Statements[0].(*token.VarStmt)
+	if !ok {
+		t.Fatalf("expect *token.VarStmt got %T", stmt.Statements[0])
+	}
+	_, ok = stmt.Statements[1].(*token.WhileStmt)
+	if !ok {
+		t.Fatalf("expect *token.WhileStmt got %T", stmt.Statements[1])
+	}
+}
+
 var testCallBack = func(errs *[]string) ErrorCallback {
 	return func(token scanner.Token, message string) {
 		*errs = append(*errs, message)
