@@ -195,7 +195,7 @@ func TestParseIfStmt(t *testing.T) {
 			testutil.LeftParen(),
 			testutil.Number(1.0), // any non-nil value is truthy
 			testutil.RightParen(),
-			testutil.PrintIdentifier(),
+			testutil.Print(),
 			testutil.Str("is true"),
 			testutil.Semicolon(),
 			testutil.ElseIdentifier(),
@@ -222,7 +222,7 @@ func TestParseIfStmtError(t *testing.T) {
 			testutil.LeftParen(),
 			testutil.Number(1.0), // any non-nil value is truthy
 			// missing ')'
-			testutil.PrintIdentifier(),
+			testutil.Print(),
 			testutil.Str("is true"),
 			testutil.Semicolon(),
 			testutil.ElseIdentifier(),
@@ -338,6 +338,29 @@ func TestParseLogicalAndExpr(t *testing.T) {
 	}
 	if expr.Operator.TokenType != scanner.AND {
 		t.Fatalf("expect scanner.AND got %T", expr.Operator.TokenType)
+	}
+}
+
+func TestWhileStmt(t *testing.T) {
+	errors := make([]string, 0)
+	p := NewParser(
+		[]scanner.Token{
+			testutil.While(),
+			testutil.LeftParen(),
+			testutil.Str("true"),
+			testutil.RightParen(),
+			testutil.Print(),
+			testutil.Str("Hurray!"),
+			testutil.Semicolon(),
+			testutil.Eof(),
+		},
+		testCallBack(&errors),
+	)
+	stmts, err := p.Parse()
+	validateNoError(t, stmts, errors, err)
+	got, ok := stmts[0].(*token.WhileStmt)
+	if !ok {
+		t.Fatalf("expect *token.WhileStmt got %T", got)
 	}
 }
 

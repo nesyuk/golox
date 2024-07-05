@@ -15,9 +15,14 @@ func ElseIdentifier() scanner.Token {
 	return scanner.Token{TokenType: scanner.ELSE, Lexeme: &lexeme, Line: 1}
 }
 
-func PrintIdentifier() scanner.Token {
+func Print() scanner.Token {
 	lexeme := "print"
 	return scanner.Token{TokenType: scanner.PRINT, Lexeme: &lexeme, Line: 1}
+}
+
+func While() scanner.Token {
+	lexeme := "while"
+	return scanner.Token{TokenType: scanner.WHILE, Lexeme: &lexeme, Line: 1}
 }
 
 func VarDecl() scanner.Token {

@@ -14,6 +14,7 @@ import (
     exprStmt -> expression ";"
 	ifStmt ->  "if" "(" expression ")" statement ( "else" statement )?
     printStmt -> "print" expression
+	whileStmt -> "while" "(" expression ")" statement
     block -> "{" declaration* "}"
 	expression -> assignment
     assignment -> IDENTIFIER "=" assignment | logicOr
@@ -93,6 +94,8 @@ func (p *Parser) statement() (token.Stmt, error) {
 		return p.ifStatement()
 	case p.match(scanner.PRINT):
 		return p.printStmt()
+	case p.match(scanner.WHILE):
+		return p.whileStatement()
 	case p.match(scanner.LEFT_BRACE):
 		stmts, err := p.block()
 		if err != nil {
@@ -101,6 +104,24 @@ func (p *Parser) statement() (token.Stmt, error) {
 		return &token.BlockStmt{Statements: stmts}, nil
 	}
 	return p.expressionStmt()
+}
+
+func (p *Parser) whileStatement() (token.Stmt, error) {
+	if _, err := p.consume(scanner.LEFT_PAREN, "Expect '(' after 'while'."); err != nil {
+		return nil, err
+	}
+	condition, err := p.expression()
+	if err != nil {
+		return nil, err
+	}
+	if _, err = p.consume(scanner.RIGHT_PAREN, "Expect ')' after condition. "); err != nil {
+		return nil, err
+	}
+	body, err := p.statement()
+	if err != nil {
+		return nil, err
+	}
+	return &token.WhileStmt{Condition: condition, Body: body}, nil
 }
 
 func (p *Parser) ifStatement() (token.Stmt, error) {

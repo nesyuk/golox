@@ -112,6 +112,17 @@ func (i *Interpreter) VisitPrintStmt(stmt *token.PrintStmt) (interface{}, error)
 	return nil, nil
 }
 
+func (i *Interpreter) VisitWhileStmt(stmt *token.WhileStmt) (interface{}, error) {
+	var cond interface{}
+	var err error
+	for cond, err = i.eval(stmt.Condition); err == nil && i.isTruthy(cond); {
+		if _, err = i.exec(stmt.Body); err != nil {
+			return nil, err
+		}
+	}
+	return nil, err
+}
+
 func (i *Interpreter) VisitIfStmt(stmt *token.IfStmt) (interface{}, error) {
 	val, err := i.eval(stmt.Condition)
 	if err != nil {

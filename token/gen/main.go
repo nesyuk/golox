@@ -36,6 +36,7 @@ var statements = []string{
 	"ExpressionStmt: Expression Expr",
 	"IfStmt: Condition Expr, ThenBranch Stmt, ElseBranch Stmt",
 	"PrintStmt: Expression Expr",
+	"WhileStmt: Condition Expr, Body Stmt",
 	"VarStmt: Name scanner.Token, Initializer Expr",
 }
 

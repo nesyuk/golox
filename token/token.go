@@ -91,6 +91,7 @@ type VisitorStmt interface {
 	VisitExpressionStmt(stmt *ExpressionStmt) (interface{}, error)
 	VisitIfStmt(stmt *IfStmt) (interface{}, error)
 	VisitPrintStmt(stmt *PrintStmt) (interface{}, error)
+	VisitWhileStmt(stmt *WhileStmt) (interface{}, error)
 	VisitVarStmt(stmt *VarStmt) (interface{}, error)
 }
 
@@ -126,6 +127,15 @@ type PrintStmt struct {
 
 func (e *PrintStmt) Accept(visitor VisitorStmt) (interface{}, error) {
 	return visitor.VisitPrintStmt(e)
+}
+
+type WhileStmt struct {
+	Condition Expr
+	Body Stmt
+}
+
+func (e *WhileStmt) Accept(visitor VisitorStmt) (interface{}, error) {
+	return visitor.VisitWhileStmt(e)
 }
 
 type VarStmt struct {
