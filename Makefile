@@ -4,7 +4,10 @@ run:
 run_prompt:
 	go run main.go
 
-gen_tokens:
+cleanup:
+	rm token/token.go 2> /dev/null
+
+gen_tokens: cleanup
 	go run token/gen/main.go token
 
 test:
