@@ -10,11 +10,14 @@ import (
 
 type Interpreter struct {
 	errorCallback ErrorCallback
+	globals       *Environment
 	env           *Environment
 }
 
 func New(onError ErrorCallback) *Interpreter {
-	return &Interpreter{onError, NewEnvironment()}
+	globals := NewEnvironment()
+	globals.Define("clock", clock{})
+	return &Interpreter{onError, globals, globals}
 }
 
 func (i *Interpreter) Interpret(statements []token.Stmt) error {
@@ -247,6 +250,37 @@ func (i *Interpreter) VisitBinaryExpr(expr *token.BinaryExpr) (interface{}, erro
 	}
 	//TODO: handle error
 	return nil, nil
+}
+
+type LoxCallable interface {
+	Arity() int
+	Call(*Interpreter, []interface{}) interface{}
+}
+
+func (i *Interpreter) VisitCall(expr *token.Call) (interface{}, error) {
+	callee, err := i.eval(expr.Callee)
+	if err != nil {
+		return nil, err
+	}
+	args := make([]interface{}, 0)
+	for _, exArg := range expr.Arguments {
+		arg, err := i.eval(exArg)
+		if err != nil {
+			return nil, err
+		}
+		args = append(args, arg)
+	}
+	function, ok := callee.(LoxCallable)
+	if !ok {
+		return nil, &RuntimeError{Token: expr.Paren, Message: "Can only call functions and classes."}
+	}
+	if len(args) != function.Arity() {
+		return nil, &RuntimeError{
+			Token:   expr.Paren,
+			Message: fmt.Sprintf("Expected %d arguments but got %d.", function.Arity(), len(args)),
+		}
+	}
+	return function.Call(i, args), nil
 }
 
 func (i *Interpreter) VisitGroupingExpr(expr *token.GroupingExpr) (interface{}, error) {

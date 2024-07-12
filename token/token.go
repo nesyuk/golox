@@ -15,6 +15,7 @@ type VisitorExpr interface {
 	VisitLiteralExpr(expr *LiteralExpr) (interface{}, error)
 	VisitLogicalExpr(expr *LogicalExpr) (interface{}, error)
 	VisitUnaryExpr(expr *UnaryExpr) (interface{}, error)
+	VisitCall(expr *Call) (interface{}, error)
 	VisitVariableExpr(expr *VariableExpr) (interface{}, error)
 	VisitBinaryExpr(expr *BinaryExpr) (interface{}, error)
 	VisitGroupingExpr(expr *GroupingExpr) (interface{}, error)
@@ -54,6 +55,16 @@ type UnaryExpr struct {
 
 func (e *UnaryExpr) Accept(visitor VisitorExpr) (interface{}, error) {
 	return visitor.VisitUnaryExpr(e)
+}
+
+type Call struct {
+	Callee Expr
+	Paren *scanner.Token
+	Arguments []Expr
+}
+
+func (e *Call) Accept(visitor VisitorExpr) (interface{}, error) {
+	return visitor.VisitCall(e)
 }
 
 type VariableExpr struct {

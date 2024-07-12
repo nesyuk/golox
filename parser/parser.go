@@ -25,7 +25,9 @@ import (
 	comparison -> term  ((">" | ">=" | "<" | "<=") term)*
 	term -> factor (("-" | "+") factor)*
     factor -> unary (( "/" | "*") unary)*
-    unary -> ("!" | "-") unary | primary
+    unary -> ("!" | "-") unary | call
+    call -> primary ( "(" arguments? ")" )*
+    arguments -> expression ( "," expression )*
     primary -> NUMBER | STRING | "true" | "false" | nil | "(" + expression + ")" | IDENTIFIER
 */
 
@@ -391,7 +393,57 @@ func (p *Parser) unary() (token.Expr, error) {
 		}
 		return &token.UnaryExpr{Operator: op, Right: right}, nil
 	}
-	return p.primary()
+	return p.call()
+}
+
+func (p *Parser) call() (token.Expr, error) {
+	expr, err := p.expression()
+	if err != nil {
+		return nil, err
+	}
+
+	for {
+		if p.match(scanner.LEFT_PAREN) {
+			expr, err = p.finishCall(expr)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			break
+		}
+	}
+
+	return expr, nil
+}
+
+func (p *Parser) finishCall(callee token.Expr) (token.Expr, error) {
+	args := make([]token.Expr, 0)
+	if !p.check(scanner.RIGHT_PAREN) {
+		arg, err := p.expression()
+		if err != nil {
+			return nil, err
+		}
+		args = append(args, arg)
+		for p.match(scanner.COMMA) {
+			arg, err := p.expression()
+			if err != nil {
+				return nil, err
+			}
+			if len(args) >= 255 {
+				return nil, p.error(p.peek(), "Can't have more than 255 arguments.")
+			}
+			args = append(args, arg)
+		}
+	}
+	tok, err := p.consume(scanner.RIGHT_PAREN, "Expect ')' after arguments.")
+	if err != nil {
+		return nil, err
+	}
+	return &token.Call{
+		Callee:    callee,
+		Paren:     tok,
+		Arguments: nil,
+	}, nil
 }
 
 func (p *Parser) primary() (token.Expr, error) {

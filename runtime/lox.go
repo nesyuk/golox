@@ -1,4 +1,4 @@
-package lox
+package runtime
 
 import (
 	"bufio"
