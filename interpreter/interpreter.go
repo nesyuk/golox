@@ -115,6 +115,18 @@ func (i *Interpreter) VisitPrintStmt(stmt *token.PrintStmt) (interface{}, error)
 	return nil, nil
 }
 
+func (i *Interpreter) VisitReturnStmt(stmt *token.ReturnStmt) (interface{}, error) {
+	var value interface{}
+	if stmt.Value != nil {
+		var err error
+		value, err = i.eval(stmt.Value)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return nil, &ReturnException{Value: value}
+}
+
 func (i *Interpreter) VisitWhileStmt(stmt *token.WhileStmt) (interface{}, error) {
 	cond, err := i.eval(stmt.Condition)
 	for ; err == nil && i.isTruthy(cond); cond, err = i.eval(stmt.Condition) {
@@ -281,7 +293,7 @@ func (i *Interpreter) VisitCallExpr(expr *token.CallExpr) (interface{}, error) {
 			Message: fmt.Sprintf("Expected %d arguments but got %d.", function.Arity(), len(args)),
 		}
 	}
-	return function.Call(i, args), nil
+	return function.Call(i, args)
 }
 
 func (i *Interpreter) VisitGroupingExpr(expr *token.GroupingExpr) (interface{}, error) {
@@ -355,3 +367,11 @@ func (e *RuntimeError) Error() string {
 }
 
 type ErrorCallback func(*RuntimeError)
+
+type ReturnException struct {
+	Value interface{}
+}
+
+func (e *ReturnException) Error() string {
+	return fmt.Sprintf("%v", e.Value)
+}

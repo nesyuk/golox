@@ -103,6 +103,7 @@ type VisitorStmt interface {
 	VisitFunctionStmt(stmt *FunctionStmt) (interface{}, error)
 	VisitIfStmt(stmt *IfStmt) (interface{}, error)
 	VisitPrintStmt(stmt *PrintStmt) (interface{}, error)
+	VisitReturnStmt(stmt *ReturnStmt) (interface{}, error)
 	VisitWhileStmt(stmt *WhileStmt) (interface{}, error)
 	VisitVarStmt(stmt *VarStmt) (interface{}, error)
 }
@@ -149,6 +150,15 @@ type PrintStmt struct {
 
 func (e *PrintStmt) Accept(visitor VisitorStmt) (interface{}, error) {
 	return visitor.VisitPrintStmt(e)
+}
+
+type ReturnStmt struct {
+	Keyword *scanner.Token
+	Value Expr
+}
+
+func (e *ReturnStmt) Accept(visitor VisitorStmt) (interface{}, error) {
+	return visitor.VisitReturnStmt(e)
 }
 
 type WhileStmt struct {

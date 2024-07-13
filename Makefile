@@ -1,6 +1,9 @@
 run:
 	go run main.go files/example.lox
 
+benchmark:
+	go run main.go files/fib.lox
+
 run_prompt:
 	go run main.go
 

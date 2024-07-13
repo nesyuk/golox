@@ -19,6 +19,7 @@ import (
     forStmt -> "for" "( (varDecl | exprStmt) ";" expr? ";" expr? ")" statement
 	ifStmt ->  "if" "(" expression ")" statement ( "else" statement )?
     printStmt -> "print" expression
+    returnStmt -> "return" expression? ";"
 	whileStmt -> "while" "(" expression ")" statement
     block -> "{" declaration* "}"
 	expression -> assignment
@@ -151,6 +152,8 @@ func (p *Parser) statement() (token.Stmt, error) {
 		return p.ifStatement()
 	case p.match(scanner.PRINT):
 		return p.printStmt()
+	case p.match(scanner.RETURN):
+		return p.returnStmt()
 	case p.match(scanner.WHILE):
 		return p.whileStatement()
 	case p.match(scanner.LEFT_BRACE):
@@ -272,6 +275,25 @@ func (p *Parser) ifStatement() (token.Stmt, error) {
 		}
 	}
 	return &token.IfStmt{Condition: cond, ThenBranch: thenBranch, ElseBranch: elseBranch}, nil
+}
+
+func (p *Parser) returnStmt() (token.Stmt, error) {
+	keyword := p.previous()
+	var value token.Expr
+	var err error
+	if !p.check(scanner.SEMICOLON) {
+		value, err = p.expression()
+		if err != nil {
+			return nil, err
+		}
+	}
+	if _, err = p.consume(scanner.SEMICOLON, "Expect ';' after return value."); err != nil {
+		return nil, err
+	}
+	return &token.ReturnStmt{
+		Keyword: &keyword,
+		Value:   value,
+	}, nil
 }
 
 func (p *Parser) printStmt() (token.Stmt, error) {

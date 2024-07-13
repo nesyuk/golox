@@ -38,6 +38,7 @@ var statements = []string{
 	"FunctionStmt: Name *scanner.Token, Params []*scanner.Token, Body []Stmt",
 	"IfStmt: Condition Expr, ThenBranch Stmt, ElseBranch Stmt",
 	"PrintStmt: Expression Expr",
+	"ReturnStmt: Keyword *scanner.Token, Value Expr",
 	"WhileStmt: Condition Expr, Body Stmt",
 	"VarStmt: Name scanner.Token, Initializer Expr",
 }
