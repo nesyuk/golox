@@ -55,7 +55,7 @@ func (i *Interpreter) exec(stmt token.Stmt) (interface{}, error) {
 	return stmt.Accept(i)
 }
 
-func (i *Interpreter) execBlock(block *token.BlockStmt, env *Environment) (interface{}, error) {
+func (i *Interpreter) execBlock(statements []token.Stmt, env *Environment) (interface{}, error) {
 	prev := i.env
 	i.env = env
 
@@ -63,7 +63,7 @@ func (i *Interpreter) execBlock(block *token.BlockStmt, env *Environment) (inter
 		i.env = prev
 	}()
 
-	for _, stmt := range block.Statements {
+	for _, stmt := range statements {
 		if _, err := i.exec(stmt); err != nil {
 			return nil, err
 		}
@@ -139,6 +139,12 @@ func (i *Interpreter) VisitIfStmt(stmt *token.IfStmt) (interface{}, error) {
 	return nil, nil
 }
 
+func (i *Interpreter) VisitFunctionStmt(stmt *token.FunctionStmt) (interface{}, error) {
+	fn := NewLoxFunction(stmt)
+	i.env.Define(*stmt.Name.Lexeme, fn)
+	return fn, nil
+}
+
 func (i *Interpreter) VisitVarStmt(stmt *token.VarStmt) (interface{}, error) {
 	var value interface{}
 	if stmt.Initializer != nil {
@@ -153,7 +159,7 @@ func (i *Interpreter) VisitVarStmt(stmt *token.VarStmt) (interface{}, error) {
 }
 
 func (i *Interpreter) VisitBlockStmt(block *token.BlockStmt) (interface{}, error) {
-	return i.execBlock(block, NewScopeEnvironment(i.env))
+	return i.execBlock(block.Statements, NewScopeEnvironment(i.env))
 }
 
 func (i *Interpreter) VisitLiteralExpr(expr *token.LiteralExpr) (interface{}, error) {
@@ -252,12 +258,7 @@ func (i *Interpreter) VisitBinaryExpr(expr *token.BinaryExpr) (interface{}, erro
 	return nil, nil
 }
 
-type LoxCallable interface {
-	Arity() int
-	Call(*Interpreter, []interface{}) interface{}
-}
-
-func (i *Interpreter) VisitCall(expr *token.Call) (interface{}, error) {
+func (i *Interpreter) VisitCallExpr(expr *token.CallExpr) (interface{}, error) {
 	callee, err := i.eval(expr.Callee)
 	if err != nil {
 		return nil, err

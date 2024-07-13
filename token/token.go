@@ -15,7 +15,7 @@ type VisitorExpr interface {
 	VisitLiteralExpr(expr *LiteralExpr) (interface{}, error)
 	VisitLogicalExpr(expr *LogicalExpr) (interface{}, error)
 	VisitUnaryExpr(expr *UnaryExpr) (interface{}, error)
-	VisitCall(expr *Call) (interface{}, error)
+	VisitCallExpr(expr *CallExpr) (interface{}, error)
 	VisitVariableExpr(expr *VariableExpr) (interface{}, error)
 	VisitBinaryExpr(expr *BinaryExpr) (interface{}, error)
 	VisitGroupingExpr(expr *GroupingExpr) (interface{}, error)
@@ -57,14 +57,14 @@ func (e *UnaryExpr) Accept(visitor VisitorExpr) (interface{}, error) {
 	return visitor.VisitUnaryExpr(e)
 }
 
-type Call struct {
+type CallExpr struct {
 	Callee Expr
 	Paren *scanner.Token
 	Arguments []Expr
 }
 
-func (e *Call) Accept(visitor VisitorExpr) (interface{}, error) {
-	return visitor.VisitCall(e)
+func (e *CallExpr) Accept(visitor VisitorExpr) (interface{}, error) {
+	return visitor.VisitCallExpr(e)
 }
 
 type VariableExpr struct {
@@ -100,6 +100,7 @@ type Stmt interface {
 type VisitorStmt interface {
 	VisitBlockStmt(stmt *BlockStmt) (interface{}, error)
 	VisitExpressionStmt(stmt *ExpressionStmt) (interface{}, error)
+	VisitFunctionStmt(stmt *FunctionStmt) (interface{}, error)
 	VisitIfStmt(stmt *IfStmt) (interface{}, error)
 	VisitPrintStmt(stmt *PrintStmt) (interface{}, error)
 	VisitWhileStmt(stmt *WhileStmt) (interface{}, error)
@@ -120,6 +121,16 @@ type ExpressionStmt struct {
 
 func (e *ExpressionStmt) Accept(visitor VisitorStmt) (interface{}, error) {
 	return visitor.VisitExpressionStmt(e)
+}
+
+type FunctionStmt struct {
+	Name *scanner.Token
+	Params []*scanner.Token
+	Body []Stmt
+}
+
+func (e *FunctionStmt) Accept(visitor VisitorStmt) (interface{}, error) {
+	return visitor.VisitFunctionStmt(e)
 }
 
 type IfStmt struct {

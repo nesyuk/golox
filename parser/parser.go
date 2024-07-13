@@ -2,6 +2,7 @@ package parser
 
 import (
 	"errors"
+	"fmt"
 	"github.com/nesyuk/golox/scanner"
 	"github.com/nesyuk/golox/token"
 )
@@ -9,6 +10,9 @@ import (
 /*
     program -> declaration* EOF
     declaration -> varDecl | statement
+    funDecl -> "fun" function
+    function -> IDENTIFIER "(" parameters? ")" block
+    parameters -> IDENTIFIER ("," IDENTIFIER)*
     varDecl -> "var" IDENTIFIER ("=" expression)? ";"
     statement -> exprStmt | printStmt | block
     exprStmt -> expression ";"
@@ -54,8 +58,10 @@ func (p *Parser) Parse() ([]token.Stmt, error) {
 }
 
 func (p *Parser) declaration() (token.Stmt, error) {
-	if p.match(scanner.VAR) {
-		return p.statementSync(p.variableDeclaration())
+	if p.match(scanner.FUN) {
+		return p.function("function")
+	} else if p.match(scanner.VAR) {
+		return p.variableDeclaration() //TODO: verify p.statementSync(p.variableDeclaration()) or p.variableDeclaration()
 	}
 	return p.statementSync(p.statement())
 }
@@ -70,6 +76,52 @@ func (p *Parser) statementSync(stmt token.Stmt, err error) (token.Stmt, error) {
 		return nil, err
 	}
 	return stmt, nil
+}
+
+func (p *Parser) function(kind string) (token.Stmt, error) {
+	tok, err := p.consume(scanner.IDENTIFIER, fmt.Sprintf("expect %v name.", kind))
+	if err != nil {
+		return nil, err
+	}
+	_, err = p.consume(scanner.LEFT_PAREN, fmt.Sprintf(fmt.Sprintf("expect '(' after %v name.", kind)))
+	if err != nil {
+		return nil, err
+	}
+	params := make([]*scanner.Token, 0)
+	if !p.check(scanner.RIGHT_PAREN) {
+		param, err := p.consume(scanner.IDENTIFIER, fmt.Sprintf("expect %v name.", kind))
+		if err != nil {
+			return nil, err
+		}
+		params = append(params, param)
+
+		for p.match(scanner.COMMA) {
+			if len(params) >= 255 {
+				return nil, p.error(p.peek(), "can't have more than 255 parameters.")
+			}
+			param, err = p.consume(scanner.IDENTIFIER, fmt.Sprintf("expect parameter name."))
+			if err != nil {
+				return nil, err
+			}
+			params = append(params, param)
+		}
+	}
+
+	if _, err = p.consume(scanner.RIGHT_PAREN, fmt.Sprintf(fmt.Sprintf("expect ')' after parameters."))); err != nil {
+		return nil, err
+	}
+	if _, err = p.consume(scanner.LEFT_BRACE, fmt.Sprintf(fmt.Sprintf("expect '{' before %v body.", kind))); err != nil {
+		return nil, err
+	}
+	body, err := p.block()
+	if err != nil {
+		return nil, err
+	}
+	return &token.FunctionStmt{
+		Name:   tok,
+		Params: params,
+		Body:   body,
+	}, nil
 }
 
 func (p *Parser) variableDeclaration() (token.Stmt, error) {
@@ -397,7 +449,7 @@ func (p *Parser) unary() (token.Expr, error) {
 }
 
 func (p *Parser) call() (token.Expr, error) {
-	expr, err := p.expression()
+	expr, err := p.primary()
 	if err != nil {
 		return nil, err
 	}
@@ -425,7 +477,7 @@ func (p *Parser) finishCall(callee token.Expr) (token.Expr, error) {
 		}
 		args = append(args, arg)
 		for p.match(scanner.COMMA) {
-			arg, err := p.expression()
+			arg, err = p.expression()
 			if err != nil {
 				return nil, err
 			}
@@ -439,10 +491,10 @@ func (p *Parser) finishCall(callee token.Expr) (token.Expr, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &token.Call{
+	return &token.CallExpr{
 		Callee:    callee,
 		Paren:     tok,
-		Arguments: nil,
+		Arguments: args,
 	}, nil
 }
 
