@@ -13,10 +13,11 @@ type LoxCallable interface {
 
 type loxFunction struct {
 	declaration *token.FunctionStmt
+	closure     *Environment
 }
 
-func NewLoxFunction(decl *token.FunctionStmt) LoxCallable {
-	return &loxFunction{decl}
+func NewLoxFunction(decl *token.FunctionStmt, env *Environment) LoxCallable {
+	return &loxFunction{decl, env}
 }
 
 func (fn *loxFunction) Arity() int {
@@ -24,7 +25,7 @@ func (fn *loxFunction) Arity() int {
 }
 
 func (fn *loxFunction) Call(interpreter *Interpreter, arguments []interface{}) (interface{}, error) {
-	env := NewScopeEnvironment(interpreter.globals)
+	env := NewScopeEnvironment(fn.closure)
 	for i := range arguments {
 		env.Define(*fn.declaration.Params[i].Lexeme, arguments[i])
 	}

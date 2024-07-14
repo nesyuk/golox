@@ -152,7 +152,7 @@ func (i *Interpreter) VisitIfStmt(stmt *token.IfStmt) (interface{}, error) {
 }
 
 func (i *Interpreter) VisitFunctionStmt(stmt *token.FunctionStmt) (interface{}, error) {
-	fn := NewLoxFunction(stmt)
+	fn := NewLoxFunction(stmt, i.env)
 	i.env.Define(*stmt.Name.Lexeme, fn)
 	return fn, nil
 }

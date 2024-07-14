@@ -21,7 +21,9 @@ func TestRun(t *testing.T) {
 		{"var a = 0; var temp; for (var b = 1; a < 10000; b = temp + b) { print a; temp = a; a = b;}", "", false, false},
 		{"fun sayHi(first, last) { print \"Hi, \" + first + \" \" + last + \"!\"; }\n sayHi(\"Mr.\", \"Bean\");", "", false, false},
 		{"fun fib(n) {\nif (n <= 1) return n;\nreturn fib(n-2) + fib(n-1);\n}\n\nfor (var i = 0; i < 20; i = i + 1) {\nprint fib(i);\n}", "", false, false},
+		{"fun makeCounter() {\nvar i = 0;\nfun count() {\ni = i + 1;\nprint i;\n }\nreturn count;\n}\n\nvar counter = makeCounter();\ncounter(); // 1\ncounter(); // 2", "", false, false},
 	}
+
 	for _, test := range tests {
 		lox := newLox()
 		err := lox.run(test.expr)
