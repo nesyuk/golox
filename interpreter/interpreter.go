@@ -10,15 +10,16 @@ import (
 
 type Interpreter struct {
 	errorCallback ErrorCallback
+	printCallback PrintCallback
 	globals       *Environment
 	env           *Environment
 	locals        map[token.Expr]int
 }
 
-func New(onError ErrorCallback) *Interpreter {
+func New(onError ErrorCallback, onPrint PrintCallback) *Interpreter {
 	globals := NewEnvironment()
 	globals.Define("clock", clock{})
-	return &Interpreter{onError, globals, globals, make(map[token.Expr]int, 0)}
+	return &Interpreter{onError, onPrint, globals, globals, make(map[token.Expr]int, 0)}
 }
 
 func (i *Interpreter) Interpret(statements []token.Stmt) error {
@@ -120,7 +121,7 @@ func (i *Interpreter) VisitPrintStmt(stmt *token.PrintStmt) (interface{}, error)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(stringify(result))
+	i.printCallback(stringify(result))
 	return nil, nil
 }
 
@@ -392,3 +393,5 @@ type ReturnException struct {
 func (e *ReturnException) Error() string {
 	return fmt.Sprintf("%v", e.Value)
 }
+
+type PrintCallback = func(string)

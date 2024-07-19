@@ -34,7 +34,8 @@ func TestResolver_Resolve(t *testing.T) {
 	}
 	for _, test := range tests {
 		runtimeErrs := make([]string, 0)
-		interpr := interpreter.New(runtimeTestCallBack(&runtimeErrs))
+		reporter := &StdoutReporter{}
+		interpr := interpreter.New(reporter.onError, reporter.onPrint)
 		staticErrs := make([]string, 0)
 		res := New(interpr, testCallBack(&staticErrs))
 		res.Resolve(test.stmts)
@@ -65,4 +66,13 @@ var runtimeTestCallBack = func(errs *[]string) interpreter.ErrorCallback {
 	return func(err *interpreter.RuntimeError) {
 		*errs = append(*errs, err.Error())
 	}
+}
+
+type StdoutReporter struct {
+}
+
+func (r *StdoutReporter) onError(err *interpreter.RuntimeError) {
+}
+
+func (r *StdoutReporter) onPrint(s string) {
 }

@@ -9,15 +9,13 @@ import (
 
 func TestInterpretLiteralExprFloat(t *testing.T) {
 	expr := &token.LiteralExpr{Value: 123.}
-	errs := make([]string, 0)
-	i := New(testCallBack(&errs))
+	v := NewValidator()
+	i := New(v.onError, v.onPrint)
 	got, err := i.eval(expr)
 	if err != nil {
 		t.Error(err)
 	}
-	if len(errs) != 0 {
-		t.Fatalf("expect len(1), got: %d", len(errs))
-	}
+	v.validateNoErrors(t)
 	if got != 123.0 {
 		t.Fatalf("expected '123' got '%v'", got)
 	}
@@ -25,15 +23,13 @@ func TestInterpretLiteralExprFloat(t *testing.T) {
 
 func TestInterpretLiteralExprString(t *testing.T) {
 	expr := &token.LiteralExpr{Value: "abc"}
-	errs := make([]string, 0)
-	i := New(testCallBack(&errs))
+	v := NewValidator()
+	i := New(v.onError, v.onPrint)
 	got, err := i.eval(expr)
 	if err != nil {
 		t.Error(err)
 	}
-	if len(errs) != 0 {
-		t.Fatalf("expect len(1), got: %d", len(errs))
-	}
+	v.validateNoErrors(t)
 
 	if got != "abc" {
 		t.Fatalf("expected 'abc' got '%v'", got)
@@ -42,15 +38,13 @@ func TestInterpretLiteralExprString(t *testing.T) {
 
 func TestInterpretLiteralExprBoolean(t *testing.T) {
 	expr := &token.LiteralExpr{Value: true}
-	errs := make([]string, 0)
-	i := New(testCallBack(&errs))
+	v := NewValidator()
+	i := New(v.onError, v.onPrint)
 	got, err := i.eval(expr)
 	if err != nil {
 		t.Error(err)
 	}
-	if len(errs) != 0 {
-		t.Fatalf("expect len(1), got: %d", len(errs))
-	}
+	v.validateNoErrors(t)
 	if got != true {
 		t.Fatalf("expected 'true' got '%v'", got)
 	}
@@ -61,15 +55,13 @@ func TestInterpretUnaryExprMinus(t *testing.T) {
 		Operator: testutil.Minus(),
 		Right:    &token.LiteralExpr{Value: 123.0},
 	}
-	errs := make([]string, 0)
-	i := New(testCallBack(&errs))
+	v := NewValidator()
+	i := New(v.onError, v.onPrint)
 	got, err := i.eval(expr)
 	if err != nil {
 		t.Error(err)
 	}
-	if len(errs) != 0 {
-		t.Fatalf("expect len(1), got: %d", len(errs))
-	}
+	v.validateNoErrors(t)
 	if got != -123.0 {
 		t.Fatalf("expect: '-123' got: '%v'", got)
 	}
@@ -80,8 +72,8 @@ func TestInterpretUnaryExprError(t *testing.T) {
 		Operator: testutil.Minus(),
 		Right:    &token.LiteralExpr{Value: "muffin"},
 	}
-	errs := make([]string, 0)
-	i := New(testCallBack(&errs))
+	v := NewValidator()
+	i := New(v.onError, v.onPrint)
 	got, err := i.eval(expr)
 	if err == nil {
 		t.Fatalf("expect not nil")
@@ -89,9 +81,7 @@ func TestInterpretUnaryExprError(t *testing.T) {
 	if err.Error() != "Operand must be a number." {
 		t.Fatalf("expect 'Operand must be a number.', got '%v'", err.Error())
 	}
-	if len(errs) != 0 {
-		t.Fatalf("expect empty, got: %d", len(errs))
-	}
+	v.validateNoErrors(t)
 	if got == "" {
 		t.Fatalf("expect not empty")
 	}
@@ -119,16 +109,14 @@ func TestInterpretUnaryExprBang(t *testing.T) {
 			Right:    &token.LiteralExpr{Value: false},
 		}, true},
 	}
-	errs := make([]string, 0)
-	i := New(testCallBack(&errs))
 	for _, test := range tests {
+		v := NewValidator()
+		i := New(v.onError, v.onPrint)
 		got, err := i.eval(test.expr)
 		if err != nil {
 			t.Error(err)
 		}
-		if len(errs) != 0 {
-			t.Fatalf("expect len(1), got: %d", len(errs))
-		}
+		v.validateNoErrors(t)
 		if got != test.expect {
 			t.Fatalf("expect: '%v' got: '%v'", test.expect, got)
 		}
@@ -211,16 +199,15 @@ func TestInterpretBinaryExpr(t *testing.T) {
 			Right:    &token.LiteralExpr{Value: "lox"},
 		}, true},
 	}
-	errs := make([]string, 0)
-	i := New(testCallBack(&errs))
+
 	for _, test := range tests {
+		v := NewValidator()
+		i := New(v.onError, v.onPrint)
 		got, err := i.eval(test.expr)
 		if err != nil {
 			t.Error(err)
 		}
-		if len(errs) != 0 {
-			t.Fatalf("expect len(1), got: %d", len(errs))
-		}
+		v.validateNoErrors(t)
 		if got != test.expect {
 			t.Fatalf("expect: %v got: %v", test.expect, got)
 		}
@@ -233,8 +220,8 @@ func TestInterpretBinaryExprError(t *testing.T) {
 		Operator: testutil.Star(),
 		Right:    &token.LiteralExpr{Value: "muffin"},
 	}
-	errs := make([]string, 0)
-	i := New(testCallBack(&errs))
+	v := NewValidator()
+	i := New(v.onError, v.onPrint)
 	got, err := i.eval(expr)
 	if err == nil {
 		t.Fatalf("expect not nil")
@@ -242,9 +229,7 @@ func TestInterpretBinaryExprError(t *testing.T) {
 	if err.Error() != "Operands must be a numbers." {
 		t.Fatalf("expect 'Operands must be a numbers.', got %v", err.Error())
 	}
-	if len(errs) != 0 {
-		t.Fatalf("expect empty got %d", len(errs))
-	}
+	v.validateNoErrors(t)
 	if got != nil {
 		t.Fatalf("expect empty")
 	}
@@ -258,8 +243,8 @@ func TestDeclVarStmt(t *testing.T) {
 			Value: "before",
 		},
 	}
-	errs := make([]string, 0)
-	i := New(testCallBack(&errs))
+	v := NewValidator()
+	i := New(v.onError, v.onPrint)
 	got, err := i.exec(stmt)
 	if got != nil {
 		t.Fatalf("expect nil")
@@ -271,8 +256,8 @@ func TestDeclVarStmt(t *testing.T) {
 }
 
 func TestInterpretAssignExpr(t *testing.T) {
-	errs := make([]string, 0)
-	i := New(testCallBack(&errs))
+	v := NewValidator()
+	i := New(v.onError, v.onPrint)
 
 	tok := testutil.Identifier("a")
 	declStmt := &token.VarStmt{
@@ -303,8 +288,8 @@ func TestInterpretAssignExpr(t *testing.T) {
 }
 
 func TestIfStmt(t *testing.T) {
-	errs := make([]string, 0)
-	i := New(testCallBack(&errs))
+	v := NewValidator()
+	i := New(v.onError, v.onPrint)
 	ifStmt := &token.IfStmt{
 		Condition:  &token.LiteralExpr{Value: 1.0},
 		ThenBranch: &token.PrintStmt{Expression: &token.LiteralExpr{Value: "is true"}},
@@ -320,8 +305,8 @@ func TestIfStmt(t *testing.T) {
 }
 
 func TestWhileStmt(t *testing.T) {
-	errs := make([]string, 0)
-	i := New(testCallBack(&errs))
+	v := NewValidator()
+	i := New(v.onError, v.onPrint)
 	tok := testutil.Identifier("i")
 	variable := token.LiteralExpr{Value: 1.0}
 	varExpr := token.VariableExpr{Name: tok}
@@ -356,8 +341,8 @@ func TestWhileStmt(t *testing.T) {
 }
 
 func TestLogicalOrExpr(t *testing.T) {
-	errs := make([]string, 0)
-	i := New(testCallBack(&errs))
+	v := NewValidator()
+	i := New(v.onError, v.onPrint)
 	tests := []struct {
 		expr   *token.LogicalExpr
 		expect interface{}
@@ -388,8 +373,8 @@ func TestLogicalOrExpr(t *testing.T) {
 }
 
 func TestBlockStmt(t *testing.T) {
-	errs := make([]string, 0)
-	i := New(testCallBack(&errs))
+	v := NewValidator()
+	i := New(v.onError, v.onPrint)
 	tokA, tokB, tokC := testutil.Identifier("a"), testutil.Identifier("b"), testutil.Identifier("c")
 	block := &token.BlockStmt{Statements: []token.Stmt{
 		&token.VarStmt{Name: tokA, Initializer: &token.LiteralExpr{Value: "global a"}},
@@ -422,8 +407,8 @@ func TestBlockStmt(t *testing.T) {
 }
 
 func TestVariableInEqualityExpr(t *testing.T) {
-	errs := make([]string, 0)
-	i := New(testCallBack(&errs))
+	v := NewValidator()
+	i := New(v.onError, v.onPrint)
 	tokI := testutil.Identifier("i")
 	varExpr := token.VariableExpr{Name: tokI}
 	assignExpr := token.AssignExpr{
@@ -452,8 +437,8 @@ func TestVariableInEqualityExpr(t *testing.T) {
 }
 
 func TestVariableInBinaryExpr(t *testing.T) {
-	errs := make([]string, 0)
-	i := New(testCallBack(&errs))
+	v := NewValidator()
+	i := New(v.onError, v.onPrint)
 	tokI := testutil.Identifier("i")
 	varExpr := token.VariableExpr{Name: tokI}
 	assignExpr := token.AssignExpr{
@@ -493,9 +478,10 @@ func TestInterpretBinaryExprDivisionByZero(t *testing.T) {
 			Right:    &token.LiteralExpr{Value: 0.0},
 		}, nil},
 	}
-	errs := make([]string, 0)
-	i := New(testCallBack(&errs))
+
 	for _, test := range tests {
+		v := NewValidator()
+		i := New(v.onError, v.onPrint)
 		got, err := i.eval(test.expr)
 		if err != nil {
 			t.Error(err)
@@ -507,8 +493,8 @@ func TestInterpretBinaryExprDivisionByZero(t *testing.T) {
 }
 
 func TestIsTruthy(t *testing.T) {
-	errs := make([]string, 0)
-	i := New(testCallBack(&errs))
+	v := NewValidator()
+	i := New(v.onError, v.onPrint)
 	if i.isTruthy(nil) {
 		t.Fatalf("expected false")
 	}
@@ -524,9 +510,49 @@ func assertValue(t *testing.T, i *Interpreter, tok *scanner.Token, expect interf
 	}
 }
 
-var testCallBack = func(errs *[]string) ErrorCallback {
-	return func(err *RuntimeError) {
-		*errs = append(*errs, err.Error())
+type validator struct {
+	errors  []string
+	results []string
+}
+
+func NewValidator() *validator {
+	return &validator{make([]string, 0), make([]string, 0)}
+}
+
+func (v *validator) onError(err *RuntimeError) {
+	v.errors = append(v.errors, err.Error())
+}
+
+func (v *validator) onPrint(s string) {
+	v.results = append(v.results, s)
+}
+
+func (v *validator) validateNoErrors(t *testing.T) {
+	v.validateErrors(t, make([]string, 0))
+}
+
+func (v *validator) validateErrors(t *testing.T, expect []string) {
+	v.validate(t, "errors", v.errors, expect)
+}
+
+func (v *validator) validateNoResult(t *testing.T) {
+	v.validateResult(t, make([]string, 0))
+}
+
+func (v *validator) validateResult(t *testing.T, expect []string) {
+	v.validate(t, "results", v.results, expect)
+}
+
+func (v *validator) validate(t *testing.T, prefix string, got, expect []string) {
+	if len(got) != len(expect) {
+		t.Errorf("%s: expect %v, got: %v", prefix, len(expect), len(got))
+		t.Log(got)
+		return
+	}
+	for i := range got {
+		if got[i] != expect[i] {
+			t.Errorf("%s expect: %v, got: %v", prefix, expect[i], got)
+		}
 	}
 }
 

@@ -13,12 +13,17 @@ import (
 
 type golox struct {
 	interpret       *interpreter.Interpreter
+	reporter        Reporter
 	hadError        bool
 	hadRuntimeError bool
 }
 
 func newLox() *golox {
-	return &golox{&interpreter.Interpreter{}, false, false}
+	return &golox{&interpreter.Interpreter{}, &StdoutReporter{}, false, false}
+}
+
+func NewLox(reporter Reporter) *golox {
+	return &golox{&interpreter.Interpreter{}, reporter, false, false}
 }
 
 func (l *golox) run(source string) error {
@@ -37,7 +42,7 @@ func (l *golox) run(source string) error {
 		return err
 	}
 
-	i := interpreter.New(l.runtimeError)
+	i := interpreter.New(l.runtimeError, l.reporter.Print)
 
 	res := resolver.New(i, l.parseError)
 	res.Resolve(statements)
@@ -54,7 +59,7 @@ func (l *golox) run(source string) error {
 }
 
 func (l *golox) runtimeError(err *interpreter.RuntimeError) {
-	fmt.Printf("%v\n[line %d]\n", err.Error(), err.Token.Line)
+	l.reporter.Error("%v\n[line %d]\n", err.Error(), err.Token.Line)
 	l.hadRuntimeError = true
 }
 
@@ -71,7 +76,7 @@ func (l *golox) error(line int, message string) {
 }
 
 func (l *golox) report(line int, where string, message string) {
-	fmt.Printf("[line %d] Error%v: %v\n", line, where, message)
+	l.reporter.Error("[line %d] Error%v: %v\n", line, where, message)
 	l.hadError = true
 }
 
