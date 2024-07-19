@@ -184,7 +184,7 @@ func TestParseGroupingExprError(t *testing.T) {
 		testCallBack(&errors),
 	)
 	stmts, err := p.Parse()
-	validateHasErrors(t, stmts, errors, err, "expect ')' after expression.")
+	validateHasErrors(t, stmts, errors, err, "expect expression")
 }
 
 func TestParseIfStmt(t *testing.T) {
@@ -451,7 +451,7 @@ func validateHasErrors(t *testing.T, stmts []token.Stmt, errors []string, err er
 	}
 	for i := range errors {
 		if errors[i] != expectErrors[i] {
-			t.Fatalf("expect '%v' got %v", expectErrors[i], errors[i])
+			t.Fatalf("expect '%v' got '%v'", expectErrors[i], errors[i])
 		}
 	}
 }

@@ -323,17 +323,22 @@ func TestWhileStmt(t *testing.T) {
 	errs := make([]string, 0)
 	i := New(testCallBack(&errs))
 	tok := testutil.Identifier("i")
+	variable := token.LiteralExpr{Value: 1.0}
+	varExpr := token.VariableExpr{Name: tok}
+	i.locals = map[token.Expr]int{
+		&varExpr: 0,
+	}
 	stmt := &token.BlockStmt{
 		Statements: []token.Stmt{
-			&token.VarStmt{Name: tok, Initializer: &token.LiteralExpr{Value: 1.0}},
+			&token.VarStmt{Name: tok, Initializer: &variable},
 			&token.WhileStmt{
-				Condition: &token.BinaryExpr{Left: &token.VariableExpr{Name: tok}, Operator: testutil.Less(), Right: &token.LiteralExpr{Value: 1.0}},
+				Condition: &token.BinaryExpr{Left: &varExpr, Operator: testutil.Less(), Right: &token.LiteralExpr{Value: 1.0}},
 				Body: &token.BlockStmt{
 					Statements: []token.Stmt{
-						&token.PrintStmt{Expression: &token.VariableExpr{Name: tok}},
+						&token.PrintStmt{Expression: &varExpr},
 						&token.ExpressionStmt{
 							Expression: &token.BinaryExpr{
-								Left:     &token.VariableExpr{Name: tok},
+								Left:     &varExpr,
 								Operator: testutil.Plus(),
 								Right:    &token.LiteralExpr{Value: 1.0}}},
 					},
@@ -420,17 +425,22 @@ func TestVariableInEqualityExpr(t *testing.T) {
 	errs := make([]string, 0)
 	i := New(testCallBack(&errs))
 	tokI := testutil.Identifier("i")
+	varExpr := token.VariableExpr{Name: tokI}
+	assignExpr := token.AssignExpr{
+		Name: tokI,
+		Value: &token.BinaryExpr{
+			Left:     &varExpr,
+			Operator: testutil.Less(),
+			Right:    &token.LiteralExpr{Value: 2.0},
+		}}
+	i.locals = map[token.Expr]int{
+		&varExpr:    0,
+		&assignExpr: 1,
+	}
 	block := &token.BlockStmt{Statements: []token.Stmt{
 		&token.VarStmt{Name: tokI, Initializer: &token.LiteralExpr{Value: 1.0}},
-		&token.ExpressionStmt{Expression: &token.AssignExpr{
-			Name: tokI,
-			Value: &token.BinaryExpr{
-				Left:     &token.VariableExpr{Name: tokI},
-				Operator: testutil.Less(),
-				Right:    &token.LiteralExpr{Value: 2.0},
-			}},
-		},
-		&token.PrintStmt{Expression: &token.VariableExpr{Name: tokI}},
+		&token.ExpressionStmt{Expression: &assignExpr},
+		&token.PrintStmt{Expression: &varExpr},
 	}}
 	got, err := i.exec(block)
 	if got != nil {
@@ -445,17 +455,22 @@ func TestVariableInBinaryExpr(t *testing.T) {
 	errs := make([]string, 0)
 	i := New(testCallBack(&errs))
 	tokI := testutil.Identifier("i")
+	varExpr := token.VariableExpr{Name: tokI}
+	assignExpr := token.AssignExpr{
+		Name: tokI,
+		Value: &token.BinaryExpr{
+			Left:     &varExpr,
+			Operator: testutil.Plus(),
+			Right:    &token.LiteralExpr{Value: 1.0},
+		}}
+	i.locals = map[token.Expr]int{
+		&varExpr:    0,
+		&assignExpr: 1,
+	}
 	block := &token.BlockStmt{Statements: []token.Stmt{
 		&token.VarStmt{Name: tokI, Initializer: &token.LiteralExpr{Value: 1.0}},
-		&token.ExpressionStmt{Expression: &token.AssignExpr{
-			Name: tokI,
-			Value: &token.BinaryExpr{
-				Left:     &token.VariableExpr{Name: tokI},
-				Operator: testutil.Plus(),
-				Right:    &token.LiteralExpr{Value: 1.0},
-			}},
-		},
-		&token.PrintStmt{Expression: &token.VariableExpr{Name: tokI}},
+		&token.ExpressionStmt{Expression: &assignExpr},
+		&token.PrintStmt{Expression: &varExpr},
 	}}
 	got, err := i.exec(block)
 	if got != nil {

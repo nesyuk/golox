@@ -31,10 +31,10 @@ func TestRun(t *testing.T) {
 			t.Error(err)
 		}
 		if test.hadError != lox.hadError {
-			t.Fatalf("expect: '%v' got '%v'", test.hadError, lox.hadError)
+			t.Errorf("expect: '%v' got '%v'", test.hadError, lox.hadError)
 		}
 		if test.hadRuntimeError != lox.hadRuntimeError {
-			t.Fatalf("expect: %v got %v", test.hadRuntimeError, lox.hadRuntimeError)
+			t.Errorf("expect: %v got %v (in %v)", test.hadRuntimeError, lox.hadRuntimeError, test.expr)
 		}
 		/*		if got != test.expect {
 				t.Fatalf("expect: %v, got: %v", test.expect, got)

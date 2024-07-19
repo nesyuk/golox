@@ -12,12 +12,13 @@ type Interpreter struct {
 	errorCallback ErrorCallback
 	globals       *Environment
 	env           *Environment
+	locals        map[token.Expr]int
 }
 
 func New(onError ErrorCallback) *Interpreter {
 	globals := NewEnvironment()
 	globals.Define("clock", clock{})
-	return &Interpreter{onError, globals, globals}
+	return &Interpreter{onError, globals, globals, make(map[token.Expr]int, 0)}
 }
 
 func (i *Interpreter) Interpret(statements []token.Stmt) error {
@@ -45,6 +46,10 @@ func stringify(value interface{}) string {
 		str = str[:2]
 	}
 	return str
+}
+
+func (i *Interpreter) Resolve(expr token.Expr, depth int) {
+	i.locals[expr] = depth
 }
 
 func (i *Interpreter) eval(expr token.Expr) (interface{}, error) {
@@ -92,7 +97,11 @@ func (i *Interpreter) VisitAssignExpr(expr *token.AssignExpr) (interface{}, erro
 	if err != nil {
 		return nil, err
 	}
-	if err := i.env.Assign(&expr.Name, value); err != nil {
+	if distance, exist := i.locals[expr]; exist {
+		i.env.AssignAt(distance, &expr.Name, value)
+		return nil, nil
+	}
+	if err := i.globals.Assign(&expr.Name, value); err != nil {
 		return nil, err
 	}
 	return value, nil
@@ -229,14 +238,14 @@ func (i *Interpreter) VisitBinaryExpr(expr *token.BinaryExpr) (interface{}, erro
 			if ok {
 				return l + r, nil
 			} else {
-				return nil, &RuntimeError{Token: &expr.Operator, Message: "Operands must be numbers."}
+				return nil, &RuntimeError{Token: &expr.Operator, Message: fmt.Sprintf("Operands must be numbers: %v", right)}
 			}
 		case string:
 			r, ok := right.(string)
 			if ok {
 				return l + r, nil
 			} else {
-				return nil, &RuntimeError{Token: &expr.Operator, Message: "Operands must be strings."}
+				return nil, &RuntimeError{Token: &expr.Operator, Message: fmt.Sprintf("Operands must be strings: %v", right)}
 			}
 		default:
 			return nil, &RuntimeError{Token: &expr.Operator, Message: "Operands must be two numbers or two strings."}
@@ -300,8 +309,16 @@ func (i *Interpreter) VisitGroupingExpr(expr *token.GroupingExpr) (interface{}, 
 	return i.eval(expr.Expression)
 }
 
-func (i *Interpreter) VisitVariableExpr(variable *token.VariableExpr) (interface{}, error) {
-	return i.env.Get(&variable.Name)
+func (i *Interpreter) VisitVariableExpr(expr *token.VariableExpr) (interface{}, error) {
+	return i.lookupVariable(&expr.Name, expr)
+}
+
+func (i *Interpreter) lookupVariable(name *scanner.Token, expr token.Expr) (interface{}, error) {
+	if distance, exist := i.locals[expr]; exist {
+		return i.env.GetAt(distance, *name.Lexeme), nil
+	}
+	val, _ := i.globals.Get(name)
+	return val, nil
 }
 
 func (i *Interpreter) isTruthy(value interface{}) bool {

@@ -142,6 +142,11 @@ func BangEqual() scanner.Token {
 	return scanner.Token{TokenType: scanner.BANG_EQUAL, Lexeme: &lexeme, Line: 1}
 }
 
+func Return() *scanner.Token {
+	lexeme := "return"
+	return &scanner.Token{TokenType: scanner.RETURN, Lexeme: &lexeme, Line: 1}
+}
+
 func Eof() scanner.Token {
 	return scanner.Token{TokenType: scanner.EOF, Line: 1}
 }

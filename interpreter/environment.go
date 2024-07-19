@@ -36,6 +36,18 @@ func (e *Environment) Get(name *scanner.Token) (interface{}, error) {
 	}
 }
 
+func (e *Environment) ancestor(distance int) *Environment {
+	env := e
+	for i := 0; i < distance; i++ {
+		env = env.enclosing
+	}
+	return env
+}
+
+func (e *Environment) GetAt(distance int, name string) interface{} {
+	return e.ancestor(distance).variables[name]
+}
+
 func (e *Environment) Assign(name *scanner.Token, value interface{}) error {
 	if _, exist := e.variables[*name.Lexeme]; exist {
 		e.variables[*name.Lexeme] = value
@@ -45,4 +57,8 @@ func (e *Environment) Assign(name *scanner.Token, value interface{}) error {
 		return e.enclosing.Assign(name, value)
 	}
 	return &RuntimeError{name, fmt.Sprintf("Undefined variable '%v'", *name.Lexeme)}
+}
+
+func (e *Environment) AssignAt(distance int, name *scanner.Token, value interface{}) {
+	e.ancestor(distance).variables[*name.Lexeme] = value
 }

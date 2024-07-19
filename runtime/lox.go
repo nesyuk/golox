@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/nesyuk/golox/interpreter"
 	"github.com/nesyuk/golox/parser"
+	"github.com/nesyuk/golox/resolver"
 	"github.com/nesyuk/golox/scanner"
 	"io"
 	"os"
@@ -37,6 +38,14 @@ func (l *golox) run(source string) error {
 	}
 
 	i := interpreter.New(l.runtimeError)
+
+	res := resolver.New(i, l.parseError)
+	res.Resolve(statements)
+
+	if l.hadError {
+		return nil
+	}
+
 	err = i.Interpret(statements)
 	if err != nil {
 		return err
