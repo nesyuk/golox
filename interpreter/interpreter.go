@@ -108,6 +108,16 @@ func (i *Interpreter) VisitAssignExpr(expr *token.AssignExpr) (interface{}, erro
 	return value, nil
 }
 
+func (i *Interpreter) VisitClassStmt(stmt *token.ClassStmt) (interface{}, error) {
+	i.env.Define(*stmt.Name.Lexeme, nil)
+	// Defining in two steps allows methods to use their class name
+	class := NewLoxClass(*stmt.Name.Lexeme)
+	if err := i.env.Assign(stmt.Name, class); err != nil {
+		return nil, err
+	}
+	return nil, nil
+}
+
 func (i *Interpreter) VisitExpressionStmt(stmt *token.ExpressionStmt) (interface{}, error) {
 	_, err := i.eval(stmt.Expression)
 	if err != nil {

@@ -43,3 +43,23 @@ func (fn *loxFunction) Call(interpreter *Interpreter, arguments []interface{}) (
 func (fn *loxFunction) String() string {
 	return fmt.Sprintf("<fn '%v'.>", *fn.declaration.Name.Lexeme)
 }
+
+type loxClass struct {
+	name string
+}
+
+func NewLoxClass(name string) LoxCallable {
+	return &loxClass{name}
+}
+
+func (cl *loxClass) Arity() int {
+	return 0
+}
+
+func (cl *loxClass) Call(*Interpreter, []interface{}) (interface{}, error) {
+	return nil, nil
+}
+
+func (cl *loxClass) String() string {
+	return fmt.Sprintf("<class '%v'.>", cl.name)
+}

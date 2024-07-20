@@ -9,7 +9,8 @@ import (
 
 /*
     program -> declaration* EOF
-    declaration -> varDecl | statement
+    declaration -> classDecl | funDecl | varDecl | statement
+    classDecl -> "class" IDENTIFIER "{" function* "}"
     funDecl -> "fun" function
     function -> IDENTIFIER "(" parameters? ")" block
     parameters -> IDENTIFIER ("," IDENTIFIER)*
@@ -59,7 +60,9 @@ func (p *Parser) Parse() ([]token.Stmt, error) {
 }
 
 func (p *Parser) declaration() (token.Stmt, error) {
-	if p.match(scanner.FUN) {
+	if p.match(scanner.CLASS) {
+		return p.class()
+	} else if p.match(scanner.FUN) {
 		return p.function("function")
 	} else if p.match(scanner.VAR) {
 		return p.variableDeclaration() //TODO: verify p.statementSync(p.variableDeclaration()) or p.variableDeclaration()
@@ -77,6 +80,31 @@ func (p *Parser) statementSync(stmt token.Stmt, err error) (token.Stmt, error) {
 		return nil, err
 	}
 	return stmt, nil
+}
+
+func (p *Parser) class() (token.Stmt, error) {
+	name, err := p.consume(scanner.IDENTIFIER, "Expect class name")
+	if err != nil {
+		return nil, err
+	}
+	if _, err := p.consume(scanner.LEFT_BRACE, "Expect '{' before class body."); err != nil {
+		return nil, err
+	}
+	methods := make([]*token.FunctionStmt, 0)
+	for !p.check(scanner.RIGHT_BRACE) && !p.isAtEnd() {
+		stmt, err := p.function("method")
+		method := stmt.(*token.FunctionStmt)
+		if err != nil {
+			methods = append(methods, method)
+		}
+	}
+	if _, err := p.consume(scanner.RIGHT_BRACE, "Expect '}' after class body."); err != nil {
+		return nil, err
+	}
+	return &token.ClassStmt{
+		Name:    name,
+		Methods: methods,
+	}, nil
 }
 
 func (p *Parser) function(kind string) (token.Stmt, error) {

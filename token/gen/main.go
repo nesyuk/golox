@@ -34,6 +34,7 @@ var expressions = []string{
 
 var statements = []string{
 	"BlockStmt: Statements []Stmt",
+	"ClassStmt: Name *scanner.Token, Methods []*FunctionStmt",
 	"ExpressionStmt: Expression Expr",
 	"FunctionStmt: Name *scanner.Token, Params []*scanner.Token, Body []Stmt",
 	"IfStmt: Condition Expr, ThenBranch Stmt, ElseBranch Stmt",

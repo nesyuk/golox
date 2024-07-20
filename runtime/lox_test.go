@@ -25,6 +25,7 @@ func TestRun(t *testing.T) {
 		{"fun sayHi(first, last) { print \"Hi, \" + first + \" \" + last + \"!\"; }\n sayHi(\"Mr.\", \"Bean\");", []string{"Hi, Mr. Bean!"}, []string{}, false},
 		{"fun fib(n) {\nif (n <= 1) return n;\nreturn fib(n-2) + fib(n-1);\n}\n\nfor (var i = 0; i < 20; i = i + 1) {\nprint fib(i);\n}", []string{"0", "1", "1", "2", "3", "5", "8", "13", "21", "34", "55", "89", "144", "233", "377", "610", "987", "1597", "2584", "4181"}, []string{}, false},
 		{"fun makeCounter() {\nvar i = 0;\nfun count() {\ni = i + 1;\nprint i;\n }\nreturn count;\n}\n\nvar counter = makeCounter();\ncounter(); // 1\ncounter(); // 2", []string{"1", "2"}, []string{}, false},
+		{"class Greeting {\n\thello() {\n\t\treturn \"Hello\";\n\t}\n}\n\nprint Greeting;", []string{"<class 'Greeting'.>"}, []string{}, false},
 	}
 
 	for _, test := range tests {

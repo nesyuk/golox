@@ -146,6 +146,12 @@ func (r *Resolver) VisitBlockStmt(stmt *token.BlockStmt) (interface{}, error) {
 	return nil, nil
 }
 
+func (r *Resolver) VisitClassStmt(stmt *token.ClassStmt) (interface{}, error) {
+	r.define(stmt.Name)
+	r.declare(stmt.Name)
+	return nil, nil
+}
+
 func (r *Resolver) VisitExpressionStmt(stmt *token.ExpressionStmt) (interface{}, error) {
 	return r.resolveExpr(stmt.Expression)
 }

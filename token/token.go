@@ -99,6 +99,7 @@ type Stmt interface {
 
 type VisitorStmt interface {
 	VisitBlockStmt(stmt *BlockStmt) (interface{}, error)
+	VisitClassStmt(stmt *ClassStmt) (interface{}, error)
 	VisitExpressionStmt(stmt *ExpressionStmt) (interface{}, error)
 	VisitFunctionStmt(stmt *FunctionStmt) (interface{}, error)
 	VisitIfStmt(stmt *IfStmt) (interface{}, error)
@@ -114,6 +115,15 @@ type BlockStmt struct {
 
 func (e *BlockStmt) Accept(visitor VisitorStmt) (interface{}, error) {
 	return visitor.VisitBlockStmt(e)
+}
+
+type ClassStmt struct {
+	Name *scanner.Token
+	Methods []*FunctionStmt
+}
+
+func (e *ClassStmt) Accept(visitor VisitorStmt) (interface{}, error) {
+	return visitor.VisitClassStmt(e)
 }
 
 type ExpressionStmt struct {
