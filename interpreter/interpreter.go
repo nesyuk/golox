@@ -108,6 +108,26 @@ func (i *Interpreter) VisitAssignExpr(expr *token.AssignExpr) (interface{}, erro
 	return value, nil
 }
 
+func (i *Interpreter) VisitSetExpr(expr *token.SetExpr) (interface{}, error) {
+	obj, err := i.eval(expr.Object)
+	if err != nil {
+		return nil, err
+	}
+	inst, ok := obj.(*loxInstance)
+	if !ok {
+		return nil, &RuntimeError{
+			Token:   expr.Name,
+			Message: "Only instances have fields.",
+		}
+	}
+	val, err := i.eval(expr.Value)
+	if err != nil {
+		return nil, err
+	}
+	inst.Set(expr.Name, val)
+	return val, nil
+}
+
 func (i *Interpreter) VisitClassStmt(stmt *token.ClassStmt) (interface{}, error) {
 	i.env.Define(*stmt.Name.Lexeme, nil)
 	// Defining in two steps allows methods to use their class name
@@ -116,6 +136,21 @@ func (i *Interpreter) VisitClassStmt(stmt *token.ClassStmt) (interface{}, error)
 		return nil, err
 	}
 	return nil, nil
+}
+
+func (i *Interpreter) VisitGetExpr(expr *token.GetExpr) (interface{}, error) {
+	obj, err := i.eval(expr.Object)
+	if err != nil {
+		return nil, err
+	}
+	inst, ok := obj.(*loxInstance)
+	if !ok {
+		return nil, &RuntimeError{
+			Token:   expr.Name,
+			Message: "Only instances have properties.",
+		}
+	}
+	return inst.Get(expr.Name)
 }
 
 func (i *Interpreter) VisitExpressionStmt(stmt *token.ExpressionStmt) (interface{}, error) {

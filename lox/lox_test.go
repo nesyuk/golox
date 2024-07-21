@@ -27,6 +27,7 @@ func TestRun(t *testing.T) {
 		{"fun makeCounter() {\nvar i = 0;\nfun count() {\ni = i + 1;\nprint i;\n }\nreturn count;\n}\n\nvar counter = makeCounter();\ncounter(); // 1\ncounter(); // 2", []string{"1", "2"}, []string{}, false},
 		{"class Greeting {\n\thello() {\n\t\treturn \"Hello\";\n\t}\n}\n\nprint Greeting;", []string{"<class 'Greeting'.>"}, []string{}, false},
 		{"class Bagel {}\nvar bagel = Bagel();\nprint bagel;", []string{"<'Bagel' instance.>"}, []string{}, false},
+		{"class Pi {}\nvar pi = Pi();\npi.value = 3.1415;\nprint pi.value;", []string{"3.1415"}, []string{}, false},
 	}
 
 	for _, test := range tests {

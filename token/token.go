@@ -14,8 +14,10 @@ type VisitorExpr interface {
 	VisitAssignExpr(expr *AssignExpr) (interface{}, error)
 	VisitLiteralExpr(expr *LiteralExpr) (interface{}, error)
 	VisitLogicalExpr(expr *LogicalExpr) (interface{}, error)
+	VisitSetExpr(expr *SetExpr) (interface{}, error)
 	VisitUnaryExpr(expr *UnaryExpr) (interface{}, error)
 	VisitCallExpr(expr *CallExpr) (interface{}, error)
+	VisitGetExpr(expr *GetExpr) (interface{}, error)
 	VisitVariableExpr(expr *VariableExpr) (interface{}, error)
 	VisitBinaryExpr(expr *BinaryExpr) (interface{}, error)
 	VisitGroupingExpr(expr *GroupingExpr) (interface{}, error)
@@ -48,6 +50,16 @@ func (e *LogicalExpr) Accept(visitor VisitorExpr) (interface{}, error) {
 	return visitor.VisitLogicalExpr(e)
 }
 
+type SetExpr struct {
+	Object Expr
+	Name *scanner.Token
+	Value Expr
+}
+
+func (e *SetExpr) Accept(visitor VisitorExpr) (interface{}, error) {
+	return visitor.VisitSetExpr(e)
+}
+
 type UnaryExpr struct {
 	Operator scanner.Token
 	Right Expr
@@ -65,6 +77,15 @@ type CallExpr struct {
 
 func (e *CallExpr) Accept(visitor VisitorExpr) (interface{}, error) {
 	return visitor.VisitCallExpr(e)
+}
+
+type GetExpr struct {
+	Object Expr
+	Name *scanner.Token
+}
+
+func (e *GetExpr) Accept(visitor VisitorExpr) (interface{}, error) {
+	return visitor.VisitGetExpr(e)
 }
 
 type VariableExpr struct {

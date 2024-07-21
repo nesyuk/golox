@@ -24,7 +24,7 @@ import (
 	whileStmt -> "while" "(" expression ")" statement
     block -> "{" declaration* "}"
 	expression -> assignment
-    assignment -> IDENTIFIER "=" assignment | logicOr
+    assignment -> (call ".")? IDENTIFIER "=" assignment | logicOr
 	logicOr -> logicAnd ( "or" logicAnd )*
 	logicAnd-> equality ( "and" equality )*
 	equality -> comparison (("!=" | "==") comparison)*
@@ -32,7 +32,7 @@ import (
 	term -> factor (("-" | "+") factor)*
     factor -> unary (( "/" | "*") unary)*
     unary -> ("!" | "-") unary | call
-    call -> primary ( "(" arguments? ")" )*
+    call -> primary ( "(" arguments? ")" | "." IDENTIFIER )*
     arguments -> expression ( "," expression )*
     primary -> NUMBER | STRING | "true" | "false" | nil | "(" + expression + ")" | IDENTIFIER
 */
@@ -377,11 +377,14 @@ func (p *Parser) assignment() (token.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-		name, ok := expr.(*token.VariableExpr)
-		if !ok {
-			return nil, p.error(tokenEquals, "Invalid assignment target.")
+
+		switch t := expr.(type) {
+		case *token.VariableExpr:
+			return &token.AssignExpr{Name: t.Name, Value: value}, nil
+		case *token.GetExpr:
+			return &token.SetExpr{Object: t.Object, Name: t.Name, Value: value}, nil
 		}
-		return &token.AssignExpr{Name: name.Name, Value: value}, nil
+		return nil, p.error(tokenEquals, "Invalid assignment target.")
 	}
 	// it's not an 'or' expression, return it
 	return expr, nil
@@ -510,6 +513,12 @@ func (p *Parser) call() (token.Expr, error) {
 			if err != nil {
 				return nil, err
 			}
+		} else if p.match(scanner.DOT) {
+			name, err := p.consume(scanner.IDENTIFIER, "Expect property name after '.'.")
+			if err != nil {
+				return nil, err
+			}
+			expr = &token.GetExpr{Object: expr, Name: name}
 		} else {
 			break
 		}

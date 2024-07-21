@@ -3,6 +3,7 @@ package interpreter
 import (
 	"errors"
 	"fmt"
+	"github.com/nesyuk/golox/scanner"
 	"github.com/nesyuk/golox/token"
 )
 
@@ -65,11 +66,26 @@ func (cl *loxClass) String() string {
 }
 
 type loxInstance struct {
-	class *loxClass
+	class  *loxClass
+	fields map[string]interface{}
 }
 
 func NewLoxInstance(class *loxClass) LoxCallable {
-	return &loxInstance{class: class}
+	return &loxInstance{class: class, fields: make(map[string]interface{}, 0)}
+}
+
+func (i *loxInstance) Get(name *scanner.Token) (interface{}, error) {
+	if val, exist := i.fields[*name.Lexeme]; exist {
+		return val, nil
+	}
+	return nil, &RuntimeError{
+		Token:   name,
+		Message: fmt.Sprintf("Undefined property '%v'.", *name.Lexeme),
+	}
+}
+
+func (i *loxInstance) Set(name *scanner.Token, value interface{}) {
+	i.fields[*name.Lexeme] = value
 }
 
 func (i *loxInstance) Arity() int {

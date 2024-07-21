@@ -78,6 +78,20 @@ func (r *Resolver) VisitAssignExpr(expr *token.AssignExpr) (interface{}, error) 
 	return nil, nil
 }
 
+func (r *Resolver) VisitSetExpr(expr *token.SetExpr) (interface{}, error) {
+	if _, err := r.resolveExpr(expr.Value); err != nil {
+		return nil, err
+	}
+	if _, err := r.resolveExpr(expr.Object); err != nil {
+		return nil, err
+	}
+	return nil, nil
+}
+
+func (r *Resolver) VisitGetExpr(expr *token.GetExpr) (interface{}, error) {
+	return r.resolveExpr(expr.Object)
+}
+
 func (r *Resolver) VisitLiteralExpr(expr *token.LiteralExpr) (interface{}, error) {
 	return nil, nil
 }
