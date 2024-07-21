@@ -57,9 +57,29 @@ func (cl *loxClass) Arity() int {
 }
 
 func (cl *loxClass) Call(*Interpreter, []interface{}) (interface{}, error) {
-	return nil, nil
+	return NewLoxInstance(cl), nil
 }
 
 func (cl *loxClass) String() string {
 	return fmt.Sprintf("<class '%v'.>", cl.name)
+}
+
+type loxInstance struct {
+	class *loxClass
+}
+
+func NewLoxInstance(class *loxClass) LoxCallable {
+	return &loxInstance{class: class}
+}
+
+func (i *loxInstance) Arity() int {
+	return 0
+}
+
+func (i *loxInstance) Call(interpreter *Interpreter, arguments []interface{}) (interface{}, error) {
+	return nil, nil
+}
+
+func (i *loxInstance) String() string {
+	return fmt.Sprintf("<'%v' instance.>", i.class.name)
 }
