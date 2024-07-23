@@ -131,7 +131,14 @@ func (i *Interpreter) VisitSetExpr(expr *token.SetExpr) (interface{}, error) {
 func (i *Interpreter) VisitClassStmt(stmt *token.ClassStmt) (interface{}, error) {
 	i.env.Define(*stmt.Name.Lexeme, nil)
 	// Defining in two steps allows methods to use their class name
-	class := NewLoxClass(*stmt.Name.Lexeme)
+
+	methods := make(map[string]*loxFunction, 0)
+	for _, method := range stmt.Methods {
+		fn := NewLoxFunction(method, i.env)
+		methods[*method.Name.Lexeme] = fn.(*loxFunction)
+	}
+
+	class := NewLoxClass(*stmt.Name.Lexeme, methods)
 	if err := i.env.Assign(stmt.Name, class); err != nil {
 		return nil, err
 	}

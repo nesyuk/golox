@@ -46,23 +46,28 @@ func (fn *loxFunction) String() string {
 }
 
 type loxClass struct {
-	name string
+	name    string
+	methods map[string]*loxFunction
 }
 
-func NewLoxClass(name string) LoxCallable {
-	return &loxClass{name}
+func NewLoxClass(name string, methods map[string]*loxFunction) LoxCallable {
+	return &loxClass{name, methods}
 }
 
-func (cl *loxClass) Arity() int {
+func (cls *loxClass) findMethod(name *scanner.Token) *loxFunction {
+	return cls.methods[*name.Lexeme]
+}
+
+func (cls *loxClass) Arity() int {
 	return 0
 }
 
-func (cl *loxClass) Call(*Interpreter, []interface{}) (interface{}, error) {
-	return NewLoxInstance(cl), nil
+func (cls *loxClass) Call(*Interpreter, []interface{}) (interface{}, error) {
+	return NewLoxInstance(cls), nil
 }
 
-func (cl *loxClass) String() string {
-	return fmt.Sprintf("<class '%v'.>", cl.name)
+func (cls *loxClass) String() string {
+	return fmt.Sprintf("<class '%v'.>", cls.name)
 }
 
 type loxInstance struct {
@@ -77,6 +82,10 @@ func NewLoxInstance(class *loxClass) LoxCallable {
 func (i *loxInstance) Get(name *scanner.Token) (interface{}, error) {
 	if val, exist := i.fields[*name.Lexeme]; exist {
 		return val, nil
+	}
+	method := i.class.findMethod(name)
+	if method != nil {
+		return method, nil
 	}
 	return nil, &RuntimeError{
 		Token:   name,

@@ -95,8 +95,9 @@ func (p *Parser) class() (token.Stmt, error) {
 		stmt, err := p.function("method")
 		method := stmt.(*token.FunctionStmt)
 		if err != nil {
-			methods = append(methods, method)
+			return nil, err
 		}
+		methods = append(methods, method)
 	}
 	if _, err := p.consume(scanner.RIGHT_BRACE, "Expect '}' after class body."); err != nil {
 		return nil, err

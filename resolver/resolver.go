@@ -161,8 +161,15 @@ func (r *Resolver) VisitBlockStmt(stmt *token.BlockStmt) (interface{}, error) {
 }
 
 func (r *Resolver) VisitClassStmt(stmt *token.ClassStmt) (interface{}, error) {
-	r.define(stmt.Name)
 	r.declare(stmt.Name)
+	r.define(stmt.Name)
+
+	for _, met := range stmt.Methods {
+		declaration := METHOD
+		if _, err := r.resolveFunction(met, declaration); err != nil {
+			return nil, err
+		}
+	}
 	return nil, nil
 }
 
@@ -250,4 +257,5 @@ type FunctionType uint8
 const (
 	NONE FunctionType = iota
 	FUNCTION
+	METHOD
 )
