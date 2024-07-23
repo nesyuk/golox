@@ -15,6 +15,7 @@ type VisitorExpr interface {
 	VisitLiteralExpr(expr *LiteralExpr) (interface{}, error)
 	VisitLogicalExpr(expr *LogicalExpr) (interface{}, error)
 	VisitSetExpr(expr *SetExpr) (interface{}, error)
+	VisitThisExpr(expr *ThisExpr) (interface{}, error)
 	VisitUnaryExpr(expr *UnaryExpr) (interface{}, error)
 	VisitCallExpr(expr *CallExpr) (interface{}, error)
 	VisitGetExpr(expr *GetExpr) (interface{}, error)
@@ -58,6 +59,14 @@ type SetExpr struct {
 
 func (e *SetExpr) Accept(visitor VisitorExpr) (interface{}, error) {
 	return visitor.VisitSetExpr(e)
+}
+
+type ThisExpr struct {
+	Keyword scanner.Token
+}
+
+func (e *ThisExpr) Accept(visitor VisitorExpr) (interface{}, error) {
+	return visitor.VisitThisExpr(e)
 }
 
 type UnaryExpr struct {

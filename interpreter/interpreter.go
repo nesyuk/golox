@@ -160,6 +160,10 @@ func (i *Interpreter) VisitGetExpr(expr *token.GetExpr) (interface{}, error) {
 	return inst.Get(expr.Name)
 }
 
+func (i *Interpreter) VisitThisExpr(expr *token.ThisExpr) (interface{}, error) {
+	return i.lookupVariable(&expr.Keyword, expr)
+}
+
 func (i *Interpreter) VisitExpressionStmt(stmt *token.ExpressionStmt) (interface{}, error) {
 	_, err := i.eval(stmt.Expression)
 	if err != nil {

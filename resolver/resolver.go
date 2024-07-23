@@ -9,12 +9,13 @@ import (
 type Resolver struct {
 	scopes        []map[string]bool
 	currentFn     FunctionType
+	currentCls    ClassType
 	interpreter   *interpreter.Interpreter
 	errorCallback ErrorCallback
 }
 
 func New(i *interpreter.Interpreter, onError ErrorCallback) *Resolver {
-	return &Resolver{make([]map[string]bool, 0), NONE, i, onError}
+	return &Resolver{make([]map[string]bool, 0), FN_NONE, CLS_NONE, i, onError}
 }
 
 func (r *Resolver) beginScope() {
@@ -92,6 +93,15 @@ func (r *Resolver) VisitGetExpr(expr *token.GetExpr) (interface{}, error) {
 	return r.resolveExpr(expr.Object)
 }
 
+func (r *Resolver) VisitThisExpr(expr *token.ThisExpr) (interface{}, error) {
+	if r.currentCls == CLS_NONE {
+		r.errorCallback(expr.Keyword, "Can't use 'this' outside of a class.")
+		return nil, nil
+	}
+	r.resolveLocal(expr, expr.Keyword)
+	return nil, nil
+}
+
 func (r *Resolver) VisitLiteralExpr(expr *token.LiteralExpr) (interface{}, error) {
 	return nil, nil
 }
@@ -161,8 +171,14 @@ func (r *Resolver) VisitBlockStmt(stmt *token.BlockStmt) (interface{}, error) {
 }
 
 func (r *Resolver) VisitClassStmt(stmt *token.ClassStmt) (interface{}, error) {
+	enclosingCls := r.currentCls
+	r.currentCls = CLASS
+
 	r.declare(stmt.Name)
 	r.define(stmt.Name)
+
+	r.beginScope()
+	r.scopes[len(r.scopes)-1]["this"] = true
 
 	for _, met := range stmt.Methods {
 		declaration := METHOD
@@ -170,6 +186,9 @@ func (r *Resolver) VisitClassStmt(stmt *token.ClassStmt) (interface{}, error) {
 			return nil, err
 		}
 	}
+
+	r.endScope()
+	r.currentCls = enclosingCls
 	return nil, nil
 }
 
@@ -219,7 +238,7 @@ func (r *Resolver) VisitPrintStmt(stmt *token.PrintStmt) (interface{}, error) {
 }
 
 func (r *Resolver) VisitReturnStmt(stmt *token.ReturnStmt) (interface{}, error) {
-	if r.currentFn == NONE {
+	if r.currentFn == FN_NONE {
 		r.errorCallback(*stmt.Keyword, "Can't return from top-level code.")
 		return nil, nil
 	}
@@ -255,7 +274,14 @@ type ErrorCallback = func(scanner.Token, string)
 type FunctionType uint8
 
 const (
-	NONE FunctionType = iota
+	FN_NONE FunctionType = iota
 	FUNCTION
 	METHOD
+)
+
+type ClassType uint8
+
+const (
+	CLS_NONE ClassType = iota
+	CLASS
 )

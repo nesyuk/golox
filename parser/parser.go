@@ -34,7 +34,7 @@ import (
     unary -> ("!" | "-") unary | call
     call -> primary ( "(" arguments? ")" | "." IDENTIFIER )*
     arguments -> expression ( "," expression )*
-    primary -> NUMBER | STRING | "true" | "false" | nil | "(" + expression + ")" | IDENTIFIER
+    primary -> NUMBER | STRING | "true" | "false" | nil | "(" + expression + ")" | IDENTIFIER | "this"
 */
 
 type Parser struct {
@@ -579,7 +579,8 @@ func (p *Parser) primary() (token.Expr, error) {
 			return nil, err
 		}
 		return &token.GroupingExpr{Expression: expr}, err
-
+	case p.match(scanner.THIS):
+		return &token.ThisExpr{Keyword: p.previous()}, nil
 	}
 	return nil, p.error(p.peek(), "expect expression")
 }

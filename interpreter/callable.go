@@ -21,6 +21,12 @@ func NewLoxFunction(decl *token.FunctionStmt, env *Environment) LoxCallable {
 	return &loxFunction{decl, env}
 }
 
+func (fn *loxFunction) bind(int *loxInstance) LoxCallable {
+	env := NewScopeEnvironment(fn.closure)
+	env.Define("this", int)
+	return NewLoxFunction(fn.declaration, env)
+}
+
 func (fn *loxFunction) Arity() int {
 	return len(fn.declaration.Params)
 }
@@ -85,7 +91,7 @@ func (i *loxInstance) Get(name *scanner.Token) (interface{}, error) {
 	}
 	method := i.class.findMethod(name)
 	if method != nil {
-		return method, nil
+		return method.bind(i), nil
 	}
 	return nil, &RuntimeError{
 		Token:   name,
