@@ -182,6 +182,9 @@ func (r *Resolver) VisitClassStmt(stmt *token.ClassStmt) (interface{}, error) {
 
 	for _, met := range stmt.Methods {
 		declaration := METHOD
+		if *met.Name.Lexeme == "init" {
+			declaration = INITIALIZER
+		}
 		if _, err := r.resolveFunction(met, declaration); err != nil {
 			return nil, err
 		}
@@ -243,6 +246,10 @@ func (r *Resolver) VisitReturnStmt(stmt *token.ReturnStmt) (interface{}, error) 
 		return nil, nil
 	}
 	if stmt.Value != nil {
+		if r.currentFn == INITIALIZER {
+			r.errorCallback(*stmt.Keyword, "Can't return a value from initializer.")
+			return nil, nil
+		}
 		return r.resolveExpr(stmt.Value)
 	}
 	return nil, nil
@@ -276,6 +283,7 @@ type FunctionType uint8
 const (
 	FN_NONE FunctionType = iota
 	FUNCTION
+	INITIALIZER
 	METHOD
 )
 

@@ -12,23 +12,24 @@ func TestRun(t *testing.T) {
 		errors       []string
 		runtimeError bool
 	}{
-		/*		{"print 3 + 2;", []string{"5"}, []string{}, false},
-				{"print 3.3 + 2.2;", []string{"5.5"}, []string{}, false},
-				{"print 4 * 5;", []string{"20"}, []string{}, false},
-				{"print \"hello,\" + \" world!\";", []string{"hello, world!"}, []string{}, false},
-				{"print (3 + 2;", []string{}, []string{"[line 1] Error at ';': expect ')' after expression.\n"}, false},
-				{"print 3 + \"2\";", []string{}, []string{"Operands must be numbers: 2\n[line 1]\n"}, true},
-				{"var a = 1; var b = 2; print a + b;", []string{"3"}, []string{}, false},
-				{"var a = 1; {var a = 2; print a;} print a;", []string{"2", "1"}, []string{}, false},
-				{"var i = 1; while(i < 3) {print i; i = i + 1;}", []string{"1", "2"}, []string{}, false},
-				{"var a = 0; var temp; for (var b = 1; a < 10000; b = temp + b) { print a; temp = a; a = b;}", []string{"0", "1", "1", "2", "3", "5", "8", "13", "21", "34", "55", "89", "144", "233", "377", "610", "987", "1597", "2584", "4181", "6765"}, []string{}, false},
-				{"fun sayHi(first, last) { print \"Hi, \" + first + \" \" + last + \"!\"; }\n sayHi(\"Mr.\", \"Bean\");", []string{"Hi, Mr. Bean!"}, []string{}, false},
-				{"fun fib(n) {\nif (n <= 1) return n;\nreturn fib(n-2) + fib(n-1);\n}\n\nfor (var i = 0; i < 20; i = i + 1) {\nprint fib(i);\n}", []string{"0", "1", "1", "2", "3", "5", "8", "13", "21", "34", "55", "89", "144", "233", "377", "610", "987", "1597", "2584", "4181"}, []string{}, false},
-				{"fun makeCounter() {\nvar i = 0;\nfun count() {\ni = i + 1;\nprint i;\n }\nreturn count;\n}\n\nvar counter = makeCounter();\ncounter(); // 1\ncounter(); // 2", []string{"1", "2"}, []string{}, false},
-				{"class Greeting {\n\thello() {\n\t\treturn \"Hello\";\n\t}\n}\n\nprint Greeting;", []string{"<class 'Greeting'.>"}, []string{}, false},
-				{"class Bagel {}\nvar bagel = Bagel();\nprint bagel;", []string{"<'Bagel' instance.>"}, []string{}, false},
-				{"class Pi {}\nvar pi = Pi();\npi.value = 3.1415;\nprint pi.value;", []string{"3.1415"}, []string{}, false},*/
+		{"print 3 + 2;", []string{"5"}, []string{}, false},
+		{"print 3.3 + 2.2;", []string{"5.5"}, []string{}, false},
+		{"print 4 * 5;", []string{"20"}, []string{}, false},
+		{"print \"hello,\" + \" world!\";", []string{"hello, world!"}, []string{}, false},
+		{"print (3 + 2;", []string{}, []string{"[line 1] Error at ';': expect ')' after expression.\n"}, false},
+		{"print 3 + \"2\";", []string{}, []string{"Operands must be numbers: 2\n[line 1]\n"}, true},
+		{"var a = 1; var b = 2; print a + b;", []string{"3"}, []string{}, false},
+		{"var a = 1; {var a = 2; print a;} print a;", []string{"2", "1"}, []string{}, false},
+		{"var i = 1; while(i < 3) {print i; i = i + 1;}", []string{"1", "2"}, []string{}, false},
+		{"var a = 0; var temp; for (var b = 1; a < 10000; b = temp + b) { print a; temp = a; a = b;}", []string{"0", "1", "1", "2", "3", "5", "8", "13", "21", "34", "55", "89", "144", "233", "377", "610", "987", "1597", "2584", "4181", "6765"}, []string{}, false},
+		{"fun sayHi(first, last) { print \"Hi, \" + first + \" \" + last + \"!\"; }\n sayHi(\"Mr.\", \"Bean\");", []string{"Hi, Mr. Bean!"}, []string{}, false},
+		{"fun fib(n) {\nif (n <= 1) return n;\nreturn fib(n-2) + fib(n-1);\n}\n\nfor (var i = 0; i < 20; i = i + 1) {\nprint fib(i);\n}", []string{"0", "1", "1", "2", "3", "5", "8", "13", "21", "34", "55", "89", "144", "233", "377", "610", "987", "1597", "2584", "4181"}, []string{}, false},
+		{"fun makeCounter() {\nvar i = 0;\nfun count() {\ni = i + 1;\nprint i;\n }\nreturn count;\n}\n\nvar counter = makeCounter();\ncounter(); // 1\ncounter(); // 2", []string{"1", "2"}, []string{}, false},
+		{"class Greeting {\n\thello() {\n\t\treturn \"Hello\";\n\t}\n}\n\nprint Greeting;", []string{"<class 'Greeting'.>"}, []string{}, false},
+		{"class Bagel {}\nvar bagel = Bagel();\nprint bagel;", []string{"<'Bagel' instance.>"}, []string{}, false},
+		{"class Pi {}\nvar pi = Pi();\npi.value = 3.1415;\nprint pi.value;", []string{"3.1415"}, []string{}, false},
 		{"class Bacon {\n\teat() {\n\tprint \"Crunch Crunch Crunch!\";\n\t}\n}\n\nBacon().eat();", []string{"Crunch Crunch Crunch!"}, []string{}, false},
+		{"class Greeting {\n\tinit(greeting) {this.greeting = greeting;}\n\t\n\tgreet(name) {\n\t\treturn this.greeting + \" \" + name + \"!\";\n\t}\n}\n\nprint Greeting(\"Hi,\").greet(\"Bob\");", []string{"Hi, Bob!"}, []string{}, false},
 	}
 
 	for _, test := range tests {

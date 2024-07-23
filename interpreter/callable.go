@@ -13,18 +13,19 @@ type LoxCallable interface {
 }
 
 type loxFunction struct {
-	declaration *token.FunctionStmt
-	closure     *Environment
+	declaration   *token.FunctionStmt
+	closure       *Environment
+	isInitializer bool
 }
 
-func NewLoxFunction(decl *token.FunctionStmt, env *Environment) LoxCallable {
-	return &loxFunction{decl, env}
+func NewLoxFunction(decl *token.FunctionStmt, env *Environment, isInitializer bool) LoxCallable {
+	return &loxFunction{decl, env, isInitializer}
 }
 
-func (fn *loxFunction) bind(int *loxInstance) LoxCallable {
+func (fn *loxFunction) bind(inst *loxInstance) LoxCallable {
 	env := NewScopeEnvironment(fn.closure)
-	env.Define("this", int)
-	return NewLoxFunction(fn.declaration, env)
+	env.Define("this", inst)
+	return NewLoxFunction(fn.declaration, env, fn.isInitializer)
 }
 
 func (fn *loxFunction) Arity() int {
@@ -36,13 +37,20 @@ func (fn *loxFunction) Call(interpreter *Interpreter, arguments []interface{}) (
 	for i := range arguments {
 		env.Define(*fn.declaration.Params[i].Lexeme, arguments[i])
 	}
+
 	_, err := interpreter.execBlock(fn.declaration.Body, env)
 	var returnValue *ReturnException
 	if err != nil && errors.As(err, &returnValue) {
+		if fn.isInitializer {
+			return fn.closure.GetAt(0, "this"), nil
+		}
 		return returnValue.Value, nil
 	}
 	if err != nil {
 		return nil, err
+	}
+	if fn.isInitializer {
+		return fn.closure.GetAt(0, "this"), nil
 	}
 	return nil, nil
 }
@@ -60,16 +68,25 @@ func NewLoxClass(name string, methods map[string]*loxFunction) LoxCallable {
 	return &loxClass{name, methods}
 }
 
-func (cls *loxClass) findMethod(name *scanner.Token) *loxFunction {
-	return cls.methods[*name.Lexeme]
+func (cls *loxClass) findMethod(name string) *loxFunction {
+	return cls.methods[name]
 }
 
 func (cls *loxClass) Arity() int {
+	if initializer := cls.findMethod("init"); initializer != nil {
+		return initializer.Arity()
+	}
 	return 0
 }
 
-func (cls *loxClass) Call(*Interpreter, []interface{}) (interface{}, error) {
-	return NewLoxInstance(cls), nil
+func (cls *loxClass) Call(interpreter *Interpreter, args []interface{}) (interface{}, error) {
+	inst := NewLoxInstance(cls)
+	if initializer := cls.findMethod("init"); initializer != nil {
+		if _, err := initializer.bind(inst.(*loxInstance)).Call(interpreter, args); err != nil {
+			return nil, nil
+		}
+	}
+	return inst, nil
 }
 
 func (cls *loxClass) String() string {
@@ -89,7 +106,7 @@ func (i *loxInstance) Get(name *scanner.Token) (interface{}, error) {
 	if val, exist := i.fields[*name.Lexeme]; exist {
 		return val, nil
 	}
-	method := i.class.findMethod(name)
+	method := i.class.findMethod(*name.Lexeme)
 	if method != nil {
 		return method.bind(i), nil
 	}

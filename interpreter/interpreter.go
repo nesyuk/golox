@@ -134,7 +134,7 @@ func (i *Interpreter) VisitClassStmt(stmt *token.ClassStmt) (interface{}, error)
 
 	methods := make(map[string]*loxFunction, 0)
 	for _, method := range stmt.Methods {
-		fn := NewLoxFunction(method, i.env)
+		fn := NewLoxFunction(method, i.env, *method.Name.Lexeme == "init")
 		methods[*method.Name.Lexeme] = fn.(*loxFunction)
 	}
 
@@ -218,7 +218,7 @@ func (i *Interpreter) VisitIfStmt(stmt *token.IfStmt) (interface{}, error) {
 }
 
 func (i *Interpreter) VisitFunctionStmt(stmt *token.FunctionStmt) (interface{}, error) {
-	fn := NewLoxFunction(stmt, i.env)
+	fn := NewLoxFunction(stmt, i.env, false)
 	i.env.Define(*stmt.Name.Lexeme, fn)
 	return fn, nil
 }

@@ -5,3 +5,15 @@ class Bacon {
 }
 
 Bacon().eat();
+
+class Greeting {
+    init(greet) {
+        this.greet = greet;
+    }
+
+    greet(name) {
+        return this.greet + " " + name + " !";
+    }
+}
+
+print Greeting("Hi,").greet("Bob");
