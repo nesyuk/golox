@@ -10,7 +10,7 @@ import (
 /*
     program -> declaration* EOF
     declaration -> classDecl | funDecl | varDecl | statement
-    classDecl -> "class" IDENTIFIER "{" function* "}"
+    classDecl -> "class" IDENTIFIER ("<" IDENTIFIER)? "{" function* "}"
     funDecl -> "fun" function
     function -> IDENTIFIER "(" parameters? ")" block
     parameters -> IDENTIFIER ("," IDENTIFIER)*
@@ -87,6 +87,13 @@ func (p *Parser) class() (token.Stmt, error) {
 	if err != nil {
 		return nil, err
 	}
+	var supercls *token.VariableExpr
+	if p.match(scanner.LESS) {
+		if _, err = p.consume(scanner.IDENTIFIER, "Expect superclass name"); err != nil {
+			return nil, nil
+		}
+		supercls = &token.VariableExpr{Name: p.previous()}
+	}
 	if _, err := p.consume(scanner.LEFT_BRACE, "Expect '{' before class body."); err != nil {
 		return nil, err
 	}
@@ -103,8 +110,9 @@ func (p *Parser) class() (token.Stmt, error) {
 		return nil, err
 	}
 	return &token.ClassStmt{
-		Name:    name,
-		Methods: methods,
+		Name:       name,
+		Superclass: supercls,
+		Methods:    methods,
 	}, nil
 }
 

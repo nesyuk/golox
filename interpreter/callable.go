@@ -60,16 +60,23 @@ func (fn *loxFunction) String() string {
 }
 
 type loxClass struct {
-	name    string
-	methods map[string]*loxFunction
+	name       string
+	superclass *loxClass
+	methods    map[string]*loxFunction
 }
 
-func NewLoxClass(name string, methods map[string]*loxFunction) LoxCallable {
-	return &loxClass{name, methods}
+func NewLoxClass(name string, superclass *loxClass, methods map[string]*loxFunction) LoxCallable {
+	return &loxClass{name, superclass, methods}
 }
 
 func (cls *loxClass) findMethod(name string) *loxFunction {
-	return cls.methods[name]
+	if method, exist := cls.methods[name]; exist {
+		return method
+	}
+	if cls.superclass != nil {
+		return cls.superclass.findMethod(name)
+	}
+	return nil
 }
 
 func (cls *loxClass) Arity() int {

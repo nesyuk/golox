@@ -17,3 +17,13 @@ class Greeting {
 }
 
 print Greeting("Hi,").greet("Bob");
+
+class Doughnut {
+    cook() {
+        print "Fry until golden brown.";
+    }
+}
+
+class BostonCream < Doughnut {}
+
+BostonCream().cook();

@@ -129,6 +129,19 @@ func (i *Interpreter) VisitSetExpr(expr *token.SetExpr) (interface{}, error) {
 }
 
 func (i *Interpreter) VisitClassStmt(stmt *token.ClassStmt) (interface{}, error) {
+	var supercls *loxClass
+	if stmt.Superclass != nil {
+		obj, err := i.eval(stmt.Superclass)
+		if err != nil {
+			return nil, err
+		}
+		var ok bool
+		supercls, ok = obj.(*loxClass)
+		if !ok {
+			return nil, &RuntimeError{&stmt.Superclass.Name, "Superclass must be a class."}
+		}
+	}
+
 	i.env.Define(*stmt.Name.Lexeme, nil)
 	// Defining in two steps allows methods to use their class name
 
@@ -138,7 +151,7 @@ func (i *Interpreter) VisitClassStmt(stmt *token.ClassStmt) (interface{}, error)
 		methods[*method.Name.Lexeme] = fn.(*loxFunction)
 	}
 
-	class := NewLoxClass(*stmt.Name.Lexeme, methods)
+	class := NewLoxClass(*stmt.Name.Lexeme, supercls, methods)
 	if err := i.env.Assign(stmt.Name, class); err != nil {
 		return nil, err
 	}

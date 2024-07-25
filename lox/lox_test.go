@@ -30,6 +30,7 @@ func TestRun(t *testing.T) {
 		{"class Pi {}\nvar pi = Pi();\npi.value = 3.1415;\nprint pi.value;", []string{"3.1415"}, []string{}, false},
 		{"class Bacon {\n\teat() {\n\tprint \"Crunch Crunch Crunch!\";\n\t}\n}\n\nBacon().eat();", []string{"Crunch Crunch Crunch!"}, []string{}, false},
 		{"class Greeting {\n\tinit(greeting) {this.greeting = greeting;}\n\t\n\tgreet(name) {\n\t\treturn this.greeting + \" \" + name + \"!\";\n\t}\n}\n\nprint Greeting(\"Hi,\").greet(\"Bob\");", []string{"Hi, Bob!"}, []string{}, false},
+		{"class Doughnut {\n\tcook() {\n\t\tprint \"Fry until golden brown.\";\n\t}\n}\n\nclass BostonCream < Doughnut {}\n\nBostonCream().cook();", []string{"Fry until golden brown."}, []string{}, false},
 	}
 
 	for _, test := range tests {

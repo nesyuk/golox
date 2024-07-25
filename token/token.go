@@ -149,6 +149,7 @@ func (e *BlockStmt) Accept(visitor VisitorStmt) (interface{}, error) {
 
 type ClassStmt struct {
 	Name *scanner.Token
+	Superclass *VariableExpr
 	Methods []*FunctionStmt
 }
 

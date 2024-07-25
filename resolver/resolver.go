@@ -180,6 +180,15 @@ func (r *Resolver) VisitClassStmt(stmt *token.ClassStmt) (interface{}, error) {
 	r.beginScope()
 	r.scopes[len(r.scopes)-1]["this"] = true
 
+	if stmt.Superclass != nil && *(stmt.Name.Lexeme) == *(stmt.Superclass.Name.Lexeme) {
+		r.errorCallback(stmt.Superclass.Name, "A class can't inherit from itself.")
+		return nil, nil
+	}
+
+	if stmt.Superclass != nil {
+		r.resolveExpr(stmt.Superclass)
+	}
+
 	for _, met := range stmt.Methods {
 		declaration := METHOD
 		if *met.Name.Lexeme == "init" {
