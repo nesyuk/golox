@@ -177,9 +177,6 @@ func (r *Resolver) VisitClassStmt(stmt *token.ClassStmt) (interface{}, error) {
 	r.declare(stmt.Name)
 	r.define(stmt.Name)
 
-	r.beginScope()
-	r.scopes[len(r.scopes)-1]["this"] = true
-
 	if stmt.Superclass != nil && *(stmt.Name.Lexeme) == *(stmt.Superclass.Name.Lexeme) {
 		r.errorCallback(stmt.Superclass.Name, "A class can't inherit from itself.")
 		return nil, nil
@@ -188,6 +185,9 @@ func (r *Resolver) VisitClassStmt(stmt *token.ClassStmt) (interface{}, error) {
 	if stmt.Superclass != nil {
 		r.resolveExpr(stmt.Superclass)
 	}
+
+	r.beginScope()
+	r.scopes[len(r.scopes)-1]["this"] = true
 
 	for _, met := range stmt.Methods {
 		declaration := METHOD
