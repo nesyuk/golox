@@ -93,6 +93,20 @@ func (r *Resolver) VisitGetExpr(expr *token.GetExpr) (interface{}, error) {
 	return r.resolveExpr(expr.Object)
 }
 
+func (r *Resolver) VisitSuperExpr(expr *token.SuperExpr) (interface{}, error) {
+	if r.currentCls == CLS_NONE {
+		r.errorCallback(expr.Keyword, "Can't use 'super' outside of a class.")
+		return nil, nil
+	}
+	if r.currentCls != SUBCLASS {
+		r.errorCallback(expr.Keyword, "Can't use 'super' in a class with no subclass.")
+		return nil, nil
+	}
+
+	r.resolveLocal(expr, expr.Keyword)
+	return nil, nil
+}
+
 func (r *Resolver) VisitThisExpr(expr *token.ThisExpr) (interface{}, error) {
 	if r.currentCls == CLS_NONE {
 		r.errorCallback(expr.Keyword, "Can't use 'this' outside of a class.")
@@ -183,7 +197,13 @@ func (r *Resolver) VisitClassStmt(stmt *token.ClassStmt) (interface{}, error) {
 	}
 
 	if stmt.Superclass != nil {
+		r.currentCls = SUBCLASS
 		r.resolveExpr(stmt.Superclass)
+	}
+
+	if stmt.Superclass != nil {
+		r.beginScope()
+		r.scopes[len(r.scopes)-1]["super"] = true
 	}
 
 	r.beginScope()
@@ -200,6 +220,11 @@ func (r *Resolver) VisitClassStmt(stmt *token.ClassStmt) (interface{}, error) {
 	}
 
 	r.endScope()
+
+	if stmt.Superclass != nil {
+		r.endScope()
+	}
+
 	r.currentCls = enclosingCls
 	return nil, nil
 }
@@ -301,4 +326,5 @@ type ClassType uint8
 const (
 	CLS_NONE ClassType = iota
 	CLASS
+	SUBCLASS
 )

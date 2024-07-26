@@ -26,6 +26,7 @@ var expressions = []string{
 	"LiteralExpr: Value interface{}",
 	"LogicalExpr: Left Expr, Operator scanner.Token, Right Expr",
 	"SetExpr: Object Expr, Name *scanner.Token, Value Expr",
+	"SuperExpr: Keyword scanner.Token, Method scanner.Token",
 	"ThisExpr: Keyword scanner.Token",
 	"UnaryExpr: Operator scanner.Token, Right Expr",
 	"CallExpr: Callee Expr, Paren *scanner.Token, Arguments []Expr",

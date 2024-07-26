@@ -31,6 +31,9 @@ func TestRun(t *testing.T) {
 		{"class Bacon {\n\teat() {\n\tprint \"Crunch Crunch Crunch!\";\n\t}\n}\n\nBacon().eat();", []string{"Crunch Crunch Crunch!"}, []string{}, false},
 		{"class Greeting {\n\tinit(greeting) {this.greeting = greeting;}\n\t\n\tgreet(name) {\n\t\treturn this.greeting + \" \" + name + \"!\";\n\t}\n}\n\nprint Greeting(\"Hi,\").greet(\"Bob\");", []string{"Hi, Bob!"}, []string{}, false},
 		{"class Doughnut {\n\tcook() {\n\t\tprint \"Fry until golden brown.\";\n\t}\n}\n\nclass BostonCream < Doughnut {}\n\nBostonCream().cook();", []string{"Fry until golden brown."}, []string{}, false},
+		{"class Doughnut {\n\tcook() {\n\t\tprint \"Fry until golden brown.\";\n\t}\n}\n\nclass BostonCream < Doughnut {\n\tcook() {\n\t\tsuper.cook();\n\t\tprint \"Pipe full of custard and coat with chocolate.\";\n\t}\n}\n\nBostonCream().cook();", []string{"Fry until golden brown.", "Pipe full of custard and coat with chocolate."}, []string{}, false},
+		{"super.cook();", []string{}, []string{"[line 1] Error at 'super': Can't use 'super' outside of a class.\n"}, false},
+		{"class BostonCream {\n\tcook() {\n\t\tsuper.cook();\n\t\tprint \"Pipe full of custard and coat with chocolate.\";\n\t}\n}\n\nBostonCream().cook();", []string{}, []string{"[line 3] Error at 'super': Can't use 'super' in a class with no subclass.\n"}, false},
 	}
 
 	for _, test := range tests {
@@ -74,13 +77,13 @@ func (r *testReporter) Validate(t *testing.T, expect []string, expectErrors []st
 
 func (r *testReporter) validate(t *testing.T, prefix string, got []string, expect []string, test string) {
 	if len(got) != len(expect) {
-		t.Errorf("%s: expect %v, got: %v (test: '%v')", prefix, len(expect), len(got), test)
+		t.Errorf("%s: expect '%v', got: '%v' (test: '%v')", prefix, len(expect), len(got), test)
 		t.Log(got)
 		return
 	}
 	for i := range got {
 		if got[i] != expect[i] {
-			t.Errorf("%s: expect: %v, got: %v", prefix, expect[i], got[i])
+			t.Errorf("%s: expect: '%v', got: '%v'", prefix, expect[i], got[i])
 		}
 	}
 }

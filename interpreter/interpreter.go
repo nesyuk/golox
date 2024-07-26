@@ -145,6 +145,11 @@ func (i *Interpreter) VisitClassStmt(stmt *token.ClassStmt) (interface{}, error)
 	i.env.Define(*stmt.Name.Lexeme, nil)
 	// Defining in two steps allows methods to use their class name
 
+	if stmt.Superclass != nil {
+		i.env = NewScopeEnvironment(i.env)
+		i.env.Define("super", supercls)
+	}
+
 	methods := make(map[string]*loxFunction, 0)
 	for _, method := range stmt.Methods {
 		fn := NewLoxFunction(method, i.env, *method.Name.Lexeme == "init")
@@ -152,6 +157,11 @@ func (i *Interpreter) VisitClassStmt(stmt *token.ClassStmt) (interface{}, error)
 	}
 
 	class := NewLoxClass(*stmt.Name.Lexeme, supercls, methods)
+
+	if stmt.Superclass != nil {
+		i.env = i.env.enclosing
+	}
+
 	if err := i.env.Assign(stmt.Name, class); err != nil {
 		return nil, err
 	}
@@ -171,6 +181,17 @@ func (i *Interpreter) VisitGetExpr(expr *token.GetExpr) (interface{}, error) {
 		}
 	}
 	return inst.Get(expr.Name)
+}
+
+func (i *Interpreter) VisitSuperExpr(expr *token.SuperExpr) (interface{}, error) {
+	distance := i.locals[expr]
+	superCls := i.env.GetAt(distance, "super").(*loxClass)
+	instance := i.env.GetAt(distance-1, "this").(*loxInstance)
+	method := superCls.findMethod(*expr.Method.Lexeme)
+	if method == nil {
+		return nil, &RuntimeError{&expr.Method, fmt.Sprintf("Undefined property '%v'.", *expr.Method.Lexeme)}
+	}
+	return method.bind(instance), nil
 }
 
 func (i *Interpreter) VisitThisExpr(expr *token.ThisExpr) (interface{}, error) {
